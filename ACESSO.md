@@ -137,6 +137,15 @@ Dentro da rede Docker os serviços se enxergam pelo **nome**, não por localhost
   para `/data/media/anime` (metadados via AniDB/TheTVDB).
 - Passo a passo completo: ver **README.md → seção 4.3.1 🍥 Anime**.
 
+## 🔐 B3) Backup do Vaultwarden (senhas)
+- Serviço `vaultwarden-backup` no compose: backup diário (04:00), criptografado
+  (AES-256), para **Google Drive** + **D:\Backups\vaultwarden**.
+- **Falta o passo único:** autorizar o Google Drive no rclone. Comando e menu
+  passo a passo no **README → seção "Backup do Vaultwarden"**.
+- Senha que criptografa o arquivo: `VAULTWARDEN_BACKUP_PASSWORD` no `.env`.
+- ⚠️ A **senha-mestra do Vaultwarden** nunca é guardada em lugar nenhum. Anote-a
+  num papel/local físico seguro — sem ela nada recupera as senhas.
+
 ## C) Trocar a senha do qBittorrent (recomendado)
 - qBittorrent → *Tools → Options → Web UI* → defina uma senha sua.
 - ⚠️ Se trocar, atualize também em **Radarr e Sonarr** → *Settings → Download

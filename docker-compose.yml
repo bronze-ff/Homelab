@@ -264,6 +264,44 @@ services:
     restart: unless-stopped
 
   # ---------------------------------------------------------------
+  # Vaultwarden Backup — backup automático e CRIPTOGRAFADO do cofre
+  # Faz dump consistente do db.sqlite3 + chaves, compacta com senha (AES-256)
+  # e envia para DOIS destinos: Google Drive (offsite) e o drive D: (local).
+  #
+  # ⚠️ PRÉ-REQUISITO (uma vez): configurar o rclone com os remotes 'gdrive'
+  # (Google Drive, login pelo navegador) e 'dlocal' (type local). Veja README
+  # seção "Backup do Vaultwarden". Sem isso, este container fica reiniciando.
+  # ---------------------------------------------------------------
+  vaultwarden-backup:
+    image: ttionya/vaultwarden-backup:latest
+    container_name: vaultwarden-backup
+    networks: [homelab]
+    environment:
+      - TZ=${TZ}
+      - TIMEZONE=${TZ}
+      - DATA_DIR=/bitwarden/data
+      # Destino 0 — Google Drive (cópia fora de casa)
+      - RCLONE_REMOTE_NAME=gdrive
+      - RCLONE_REMOTE_DIR=/VaultwardenBackup/
+      # Destino 1 — drive D: (cópia local, sobrevive ao SSD C: morrer)
+      - RCLONE_REMOTE_NAME_1=dlocal
+      - RCLONE_REMOTE_DIR_1=/backup-d/
+      # Criptografia extra do arquivo (7-Zip AES-256)
+      - ZIP_ENABLE=TRUE
+      - ZIP_PASSWORD=${VAULTWARDEN_BACKUP_PASSWORD}
+      # Mantém 30 dias de backups (apaga os mais antigos)
+      - BACKUP_KEEP_DAYS=30
+      # Roda todo dia às 04:00
+      - CRON=0 4 * * *
+    volumes:
+      - ${CONFIG_PATH}/vaultwarden:/bitwarden/data:ro   # lê o cofre (somente leitura)
+      - ${CONFIG_PATH}/vaultwarden-backup:/config       # guarda o rclone.conf
+      - D:/Backups/vaultwarden:/backup-d                # cópia local no D:
+    depends_on:
+      - vaultwarden
+    restart: unless-stopped
+
+  # ---------------------------------------------------------------
   # Uptime Kuma — monitor de status (avisa quando algo cai)
   # ---------------------------------------------------------------
   uptime-kuma:

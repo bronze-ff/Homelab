@@ -321,6 +321,60 @@ streams 1080p tranquilamente em CPU moderna.
 
 ---
 
+## 🔐 Backup do Vaultwarden (senhas)
+
+O serviço `vaultwarden-backup` faz, **todo dia às 04:00**, um dump consistente do
+cofre (`db.sqlite3` + chaves), compacta com **senha (7-Zip AES-256)** e envia para
+**dois destinos**: o **Google Drive** (fora de casa) e o **drive D:** (local).
+
+> 🔑 **Duas camadas de segurança:** o cofre já é criptografado com a sua
+> **senha-mestra** (o servidor nunca a conhece) e o arquivo de backup ganha uma
+> **segunda senha** (`VAULTWARDEN_BACKUP_PASSWORD` no `.env`). Mesmo que invadam o
+> Google Drive, pegam um arquivo embaralhado duas vezes.
+>
+> ⚠️ **Nunca esqueça a senha-mestra** — sem ela, nem o backup recupera as senhas.
+> Anote-a num papel guardado em local físico seguro.
+
+### Configuração única (rclone → Google Drive)
+Precisa autorizar o Google **uma vez** (login pelo navegador). Na pasta do projeto:
+
+```powershell
+docker compose run --rm -p 53682:53682 vaultwarden-backup rclone config
+```
+
+No menu interativo, crie **dois remotes**:
+
+1. **`gdrive`** (Google Drive):
+   - `n` (New remote) → name: **`gdrive`** → Storage: **`drive`**
+   - `client_id` e `client_secret`: deixe **em branco** (Enter)
+   - `scope`: **`1`** (Full access)
+   - `root_folder_id`, `service_account_file`: em branco
+   - *Edit advanced config?* **`n`**
+   - *Use auto config?* **`y`** → o rclone mostra uma URL `http://127.0.0.1:53682/...`
+     → **abra essa URL no navegador do Windows**, faça login e autorize.
+   - *Configure this as a Shared Drive?* **`n`** → confirme **`y`**.
+2. **`dlocal`** (cópia no D:):
+   - `n` → name: **`dlocal`** → Storage: **`local`** → aceite os padrões → **`y`**.
+3. **`q`** para sair.
+
+### Ligar e testar
+```powershell
+docker compose up -d vaultwarden-backup           # ativa o agendamento diário
+docker compose run --rm vaultwarden-backup backup # roda um backup AGORA (teste)
+```
+Confira se o arquivo `.7z` apareceu em `D:\Backups\vaultwarden` e na pasta
+**VaultwardenBackup** do seu Google Drive.
+
+### Restaurar (se precisar)
+```powershell
+# lista as opções de restauração
+docker compose run --rm vaultwarden-backup restore --help
+```
+Pare o Vaultwarden, restaure o `.7z` (ele pede a `VAULTWARDEN_BACKUP_PASSWORD`) para
+`config/vaultwarden`, e suba de novo. Detalhes: https://github.com/ttionya/vaultwarden-backup
+
+---
+
 ## ➕ Serviços extras (já no compose, comentados)
 
 Descomente no `docker-compose.yml` se quiser:
