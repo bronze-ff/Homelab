@@ -58,7 +58,8 @@ Dentro da rede Docker os serviços se enxergam pelo **nome**, não por localhost
 
 ## ✅ Já configurado automaticamente (não precisa mexer)
 - qBittorrent: senha, pasta de download, categorias `radarr`/`sonarr`
-- Prowlarr: Flaresolverr + apps (Radarr/Sonarr) + 4 indexadores públicos
+- Prowlarr: Flaresolverr + apps (Radarr/Sonarr) + indexadores públicos, incluindo
+  os de **anime** (Nyaa.si, Tokyo Toshokan, SubsPlease)
 - Radarr/Sonarr: root folder, download client, e os perfis **Dublado PT-BR** e **Original + Legenda**
 - Bazarr: conectado ao Radarr/Sonarr, PT-BR habilitado, perfil de idioma padrão
 
@@ -118,9 +119,11 @@ Dentro da rede Docker os serviços se enxergam pelo **nome**, não por localhost
 - Prowlarr → *Indexers → Add Indexer* → procure o tracker → informe suas credenciais.
 
 ## 🍥 B2) Anime → Prowlarr + Sonarr
-- **Prowlarr** → *Indexers → Add Indexer*: adicione **Nyaa.si** e **AnimeTosho**
-  (públicos, não precisam de Flaresolverr). Opcional: **Anidex**. Clique em
-  **Test** e depois *Settings → Apps → Sync App Indexers*.
+- ✅ **Já configurado:** indexadores **Nyaa.si**, **Tokyo Toshokan** e
+  **SubsPlease** adicionados no Prowlarr e sincronizados para o Sonarr.
+- Opcional: **Anidex** (estava em 502 na hora — re-adicione quando o site voltar).
+  O **AnimeTosho.org** público não está nas definições do Prowlarr (só o
+  `animetosho-xyz`, que exige API key/conta).
 - **Sonarr** → *Settings → Media Management → Root Folders → Add* →
   `/data/media/anime`. Ao adicionar um anime, marque **Series Type: Anime**.
 - **Jellyfin** → *Add Media Library* tipo **Shows** com nome "Anime" apontando

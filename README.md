@@ -154,12 +154,15 @@ Todos devem aparecer como **running**. Pronto — agora é a configuração de c
    - **Brasileiros / dublado / dual áudio**: procure por **Comando Torrents**,
      **BluDV**, **Lapumia**, **Comando.la** e similares. Marque a tag
      `flaresolverr` nos que usam Cloudflare.
-   - **🍥 Anime (público)** — adicione estes para os animes:
+   - **🍥 Anime (público)** — já adicionados neste homelab:
      - **Nyaa.si** — o maior tracker de anime (sub/dual/raw). Essencial.
-     - **AnimeTosho** — espelho indexado do Nyaa, ótimo p/ automação no Sonarr.
-     - **subsplease** *(via Nyaa)* / **SubsPlease** — releases semanais legendados.
-     - **Anidex** e **AnimeBytes** *(privado, exige conta)* — opcionais.
-     > Nyaa/AnimeTosho geralmente **não** precisam de Flaresolverr.
+     - **Tokyo Toshokan** — feed de anime/dorama, ótimo p/ automação no Sonarr.
+     - **SubsPlease** — releases semanais legendados.
+     - Opcionais: **Anidex** (estava em 502 na configuração — re-adicione quando
+       o site voltar) e **AnimeBytes** *(privado, exige conta)*.
+     > ⚠️ O **AnimeTosho.org** público não consta nas definições atuais do
+     > Prowlarr; só existe o `animetosho-xyz`, que **exige API key** (conta).
+     > Estes indexadores **não** precisam de Flaresolverr.
    - Em cada indexador clique em **Test** antes de salvar.
 4. **Conectar ao Radarr e Sonarr** (*Settings → Apps → Add*):
    - Radarr: Server `http://radarr:7878`, API key do Radarr (passo 4.3).
