@@ -225,10 +225,11 @@ Sonarr tem um tipo de série dedicado. Você **não precisa de outro container**
    - **Series Type: `Anime`**  ← passo mais importante (ativa numeração absoluta).
    - **Root Folder:** `/data/media/anime`.
    - **Quality Profile:** `Remux-1080p - Anime` (ou o que você criou).
-5. **Release Profile (opcional, recomendado)** — *Settings → Profiles → Release
-   Profiles → Add*: em **Preferred** adicione termos como `SubsPlease`, `Erai-raws`,
-   `Multi`, `Dual Audio` com score positivo; em **Must Not Contain** coloque `Raw`
-   se você sempre quer legendado.
+5. **Release Profile (já criado neste homelab)** — *Settings → Profiles → Release
+   Profiles*: existe o perfil **"Bloquear audio dublado (manter original)"**, que
+   em **Must Not Contain** bloqueia áudio dublado (`FRENCH`, `VF`, `GERMAN`, `ITA`,
+   `SPANISH`, grupo `Tsundere-Raws`). Mantém VOSTFR/SUBFRENCH (áudio japonês
+   original + legenda). Edite os termos se quiser ajustar.
 6. **Indexadores**: garanta que **Nyaa.si** e **AnimeTosho** estão no Prowlarr
    (passo 4.2) e foram sincronizados (*Sync App Indexers*).
 

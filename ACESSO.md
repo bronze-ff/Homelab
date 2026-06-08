@@ -120,7 +120,14 @@ Dentro da rede Docker os serviços se enxergam pelo **nome**, não por localhost
 
 ## 🍥 B2) Anime → Prowlarr + Sonarr
 - ✅ **Já configurado:** indexadores **Nyaa.si**, **Tokyo Toshokan** e
-  **SubsPlease** adicionados no Prowlarr e sincronizados para o Sonarr.
+  **SubsPlease** no Prowlarr, sincronizados para o Sonarr.
+- ✅ **Root folder `/data/media/anime`** criado no Sonarr; os animes já existentes
+  foram movidos para lá (separados das séries normais).
+- ✅ **Release Profile "Bloquear audio dublado (manter original)"** ativo no
+  Sonarr: ignora releases de **áudio** dublado (FRENCH/VF/GERMAN/ITA/SPANISH e o
+  grupo Tsundere-Raws). Mantém VOSTFR/SUBFRENCH (áudio japonês original + legenda).
+- ⏳ **Falta (manual):** criar a biblioteca **Anime** no Jellyfin apontando para
+  `/data/media/anime` (tipo Shows). Ver README seção 4.5.
 - Opcional: **Anidex** (estava em 502 na hora — re-adicione quando o site voltar).
   O **AnimeTosho.org** público não está nas definições do Prowlarr (só o
   `animetosho-xyz`, que exige API key/conta).
