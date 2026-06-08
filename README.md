@@ -307,6 +307,32 @@ docker compose run --rm recyclarr sync   # ressincroniza perfis TRaSH
 
 ---
 
+## 🩺 Jellyfin: "metadados não atualizam" / `database is locked`
+
+O banco do Jellyfin é SQLite. No Docker Desktop (Windows), o `config/` fica num
+mount **9p** que lida mal com SQLite e gera `database is locked` — varreduras de
+metadados são canceladas no meio e capas/infos não salvam.
+
+**Correção já aplicada:** só o banco (`/config/data/data`) foi movido para um
+**volume Docker nativo** (`jellyfin-data`, ext4 da VM) no `docker-compose.yml`. O
+resto do `config/jellyfin` segue no bind mount. Isso elimina os locks.
+
+> No rebuild numa máquina nova o volume nasce vazio (o Jellyfin recria o banco),
+> igual ao resto do `config/`. Para **migrar** um banco existente para o volume:
+> ```powershell
+> docker compose stop jellyfin
+> docker volume create homelab_jellyfin-data
+> docker run --rm -v "${PWD}/config/jellyfin/data/data:/src:ro" -v homelab_jellyfin-data:/dst `
+>   alpine sh -c "cp -a /src/. /dst/ && chown -R 1000:1000 /dst"
+> docker compose up -d jellyfin
+> ```
+
+**Se ainda faltar capa em algum título:** passe o mouse no filme → **⋮** →
+*Atualizar metadados* → **Substituir todos os metadados** + **Procurar imagens
+ausentes**. Agora salva sem travar.
+
+---
+
 ## 🎞️ Transcode por hardware no Jellyfin (opcional, avançado)
 
 No Docker Desktop/WSL2 a aceleração por GPU **não é automática**:

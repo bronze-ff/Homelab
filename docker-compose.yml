@@ -29,6 +29,9 @@ volumes:
   immich-model-cache:
   nextcloud-html:
   nextcloud-data:
+  # Banco SQLite do Jellyfin em volume NATIVO (ext4 da VM). O bind mount do
+  # Windows é 9p e causa "database is locked" — isso resolve. Ver README.
+  jellyfin-data:
 
 services:
   # ---------------------------------------------------------------
@@ -44,6 +47,8 @@ services:
       - TZ=${TZ}
     volumes:
       - ${CONFIG_PATH}/jellyfin:/config
+      # Só o banco SQLite vai para um volume nativo (evita 'database is locked').
+      - jellyfin-data:/config/data/data
       - ${MEDIA_PATH}/media:/data/media
     ports:
       - "8096:8096"   # Web UI (HTTP)
