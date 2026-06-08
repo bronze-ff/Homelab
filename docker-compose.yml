@@ -265,12 +265,12 @@ services:
 
   # ---------------------------------------------------------------
   # Vaultwarden Backup — backup automático e CRIPTOGRAFADO do cofre
-  # Faz dump consistente do db.sqlite3 + chaves, compacta com senha (AES-256)
-  # e envia para DOIS destinos: Google Drive (offsite) e o drive D: (local).
+  # Faz dump consistente do db.sqlite3 + chaves e compacta com senha (AES-256).
   #
-  # ⚠️ PRÉ-REQUISITO (uma vez): configurar o rclone com os remotes 'gdrive'
-  # (Google Drive, login pelo navegador) e 'dlocal' (type local). Veja README
-  # seção "Backup do Vaultwarden". Sem isso, este container fica reiniciando.
+  # Destino: pasta D:\Backups\vaultwarden. A cópia NA NUVEM é feita pelo app
+  # "Google Drive para Desktop" sincronizando essa pasta (o Docker não consegue
+  # escrever direto no disco virtual G: do Google). Ver README "Backup do
+  # Vaultwarden". O remote 'dlocal' (type local) já está criado — sem OAuth.
   # ---------------------------------------------------------------
   vaultwarden-backup:
     image: ttionya/vaultwarden-backup:latest
@@ -280,14 +280,12 @@ services:
       - TZ=${TZ}
       - TIMEZONE=${TZ}
       - DATA_DIR=/bitwarden/data
-      # Destino 0 — Google Drive (cópia fora de casa)
-      - RCLONE_REMOTE_NAME=gdrive
-      - RCLONE_REMOTE_DIR=/VaultwardenBackup/
-      # Destino 1 — drive D: (cópia local, sobrevive ao SSD C: morrer)
-      - RCLONE_REMOTE_NAME_1=dlocal
-      - RCLONE_REMOTE_DIR_1=/backup-d/
-      # Criptografia extra do arquivo (7-Zip AES-256)
+      # Destino — pasta no drive D: (o app do Google Drive sobe pra nuvem)
+      - RCLONE_REMOTE_NAME=dlocal
+      - RCLONE_REMOTE_DIR=/backup-d/
+      # Criptografia extra do arquivo (7-Zip AES-256, com nomes de arquivo ocultos)
       - ZIP_ENABLE=TRUE
+      - ZIP_TYPE=7z
       - ZIP_PASSWORD=${VAULTWARDEN_BACKUP_PASSWORD}
       # Mantém 30 dias de backups (apaga os mais antigos)
       - BACKUP_KEEP_DAYS=30
@@ -296,7 +294,7 @@ services:
     volumes:
       - ${CONFIG_PATH}/vaultwarden:/bitwarden/data:ro   # lê o cofre (somente leitura)
       - ${CONFIG_PATH}/vaultwarden-backup:/config       # guarda o rclone.conf
-      - D:/Backups/vaultwarden:/backup-d                # cópia local no D:
+      - D:/Backups/vaultwarden:/backup-d                # destino do backup
     depends_on:
       - vaultwarden
     restart: unless-stopped

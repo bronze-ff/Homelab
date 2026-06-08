@@ -138,10 +138,12 @@ Dentro da rede Docker os serviços se enxergam pelo **nome**, não por localhost
 - Passo a passo completo: ver **README.md → seção 4.3.1 🍥 Anime**.
 
 ## 🔐 B3) Backup do Vaultwarden (senhas)
-- Serviço `vaultwarden-backup` no compose: backup diário (04:00), criptografado
-  (AES-256), para **Google Drive** + **D:\Backups\vaultwarden**.
-- **Falta o passo único:** autorizar o Google Drive no rclone. Comando e menu
-  passo a passo no **README → seção "Backup do Vaultwarden"**.
+- ✅ **Já funciona:** serviço `vaultwarden-backup` rodando, backup diário (04:00),
+  criptografado **7-Zip AES-256** (nomes ocultos), em **`D:\Backups\vaultwarden`**.
+  Testado e verificado (sem a senha não abre).
+- ⏳ **Falta o passo único (você):** no app **Google Drive para Desktop** →
+  Preferências → Meu computador → **Adicionar pasta** → `D:\Backups\vaultwarden`
+  → Sincronizar. Aí a cópia vai pra nuvem automaticamente. (Detalhes no README.)
 - Senha que criptografa o arquivo: `VAULTWARDEN_BACKUP_PASSWORD` no `.env`.
 - ⚠️ A **senha-mestra do Vaultwarden** nunca é guardada em lugar nenhum. Anote-a
   num papel/local físico seguro — sem ela nada recupera as senhas.

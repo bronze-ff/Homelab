@@ -324,8 +324,14 @@ streams 1080p tranquilamente em CPU moderna.
 ## 🔐 Backup do Vaultwarden (senhas)
 
 O serviço `vaultwarden-backup` faz, **todo dia às 04:00**, um dump consistente do
-cofre (`db.sqlite3` + chaves), compacta com **senha (7-Zip AES-256)** e envia para
-**dois destinos**: o **Google Drive** (fora de casa) e o **drive D:** (local).
+cofre (`db.sqlite3` + chaves) e compacta com **senha (7-Zip AES-256, nomes ocultos)**
+na pasta **`D:\Backups\vaultwarden`**. A cópia **na nuvem** é feita pelo app
+**Google Drive para Desktop** sincronizando essa pasta.
+
+> 💡 **Por que não escrever direto no Google Drive (G:)?** O Docker Desktop não
+> consegue escrever no disco virtual G: (testado — vira um mount fantasma). Então o
+> container grava no D: (disco real) e o app do Google sobe pra nuvem. Bônus: não
+> precisa de login/OAuth nenhum.
 
 > 🔑 **Duas camadas de segurança:** o cofre já é criptografado com a sua
 > **senha-mestra** (o servidor nunca a conhece) e o arquivo de backup ganha uma
@@ -335,35 +341,24 @@ cofre (`db.sqlite3` + chaves), compacta com **senha (7-Zip AES-256)** e envia pa
 > ⚠️ **Nunca esqueça a senha-mestra** — sem ela, nem o backup recupera as senhas.
 > Anote-a num papel guardado em local físico seguro.
 
-### Configuração única (rclone → Google Drive)
-Precisa autorizar o Google **uma vez** (login pelo navegador). Na pasta do projeto:
+### Passo único: sincronizar a pasta no Google Drive para Desktop
+1. Instale o **Google Drive para Desktop** e faça login (já feito — disco **G:**).
+2. Clique no ícone do Google Drive (bandeja) → ⚙️ **Preferências** → **Meu computador**
+   → **Adicionar pasta** → escolha **`D:\Backups\vaultwarden`** → opção
+   **"Sincronizar com o Google Drive"** → **Salvar**.
+3. Pronto: tudo que o container gravar no D: sobe automaticamente pra nuvem.
 
+> O remote `dlocal` (rclone tipo *local*) já está criado — **nenhum OAuth é
+> necessário**. No rebuild, recrie-o com:
+> `docker compose run --rm vaultwarden-backup rclone config create dlocal local`
+
+### Testar agora
 ```powershell
-docker compose run --rm -p 53682:53682 vaultwarden-backup rclone config
+docker compose run --rm vaultwarden-backup backup   # roda um backup na hora
 ```
-
-No menu interativo, crie **dois remotes**:
-
-1. **`gdrive`** (Google Drive):
-   - `n` (New remote) → name: **`gdrive`** → Storage: **`drive`**
-   - `client_id` e `client_secret`: deixe **em branco** (Enter)
-   - `scope`: **`1`** (Full access)
-   - `root_folder_id`, `service_account_file`: em branco
-   - *Edit advanced config?* **`n`**
-   - *Use auto config?* **`y`** → o rclone mostra uma URL `http://127.0.0.1:53682/...`
-     → **abra essa URL no navegador do Windows**, faça login e autorize.
-   - *Configure this as a Shared Drive?* **`n`** → confirme **`y`**.
-2. **`dlocal`** (cópia no D:):
-   - `n` → name: **`dlocal`** → Storage: **`local`** → aceite os padrões → **`y`**.
-3. **`q`** para sair.
-
-### Ligar e testar
-```powershell
-docker compose up -d vaultwarden-backup           # ativa o agendamento diário
-docker compose run --rm vaultwarden-backup backup # roda um backup AGORA (teste)
-```
-Confira se o arquivo `.7z` apareceu em `D:\Backups\vaultwarden` e na pasta
-**VaultwardenBackup** do seu Google Drive.
+Confira o `.7z` em `D:\Backups\vaultwarden` (e, alguns segundos depois, na pasta
+**Backups\vaultwarden** do seu Google Drive na web). Para conferir a criptografia:
+`7z l D:\Backups\vaultwarden\backup.AAAAMMDD.7z` deve **pedir senha**.
 
 ### Restaurar (se precisar)
 ```powershell
