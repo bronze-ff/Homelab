@@ -1,0 +1,450 @@
+####################################################################
+# Homelab de Mídia (*arr stack) — orquestrado por Docker Compose
+# ------------------------------------------------------------------
+#  - Streaming:        Jellyfin
+#  - Indexadores:      Prowlarr (+ Flaresolverr p/ Cloudflare)
+#  - Filmes:           Radarr
+#  - Séries + Anime:   Sonarr  (anime via Series Type = Anime + pasta /data/media/anime)
+#  - Legendas PT-BR:   Bazarr
+#  - Download:         qBittorrent
+#  - Pedidos:          Jellyseerr
+#  - Dashboard:        Homarr
+#  - Gerência Docker:  Portainer
+#  - Auto-update:      Watchtower
+#  - Perfis TRaSH:     Recyclarr
+#
+#  Acesso remoto: Tailscale instalado NO HOST Windows (não é container).
+#
+#  Volumes:
+#   - ${CONFIG_PATH}/<app>  -> /config   (appdata de cada serviço)
+#   - ${MEDIA_PATH}         -> /data     (torrents + biblioteca, hardlink-friendly)
+####################################################################
+
+networks:
+  homelab:
+    name: homelab
+    driver: bridge
+
+volumes:
+  immich-model-cache:
+  nextcloud-html:
+  nextcloud-data:
+
+services:
+  # ---------------------------------------------------------------
+  # Jellyfin — servidor de streaming
+  # ---------------------------------------------------------------
+  jellyfin:
+    image: lscr.io/linuxserver/jellyfin:latest
+    container_name: jellyfin
+    networks: [homelab]
+    environment:
+      - PUID=${PUID}
+      - PGID=${PGID}
+      - TZ=${TZ}
+    volumes:
+      - ${CONFIG_PATH}/jellyfin:/config
+      - ${MEDIA_PATH}/media:/data/media
+    ports:
+      - "8096:8096"   # Web UI (HTTP)
+      # - "8920:8920" # HTTPS (opcional)
+      # - "7359:7359/udp" # auto-discovery na LAN (opcional)
+    restart: unless-stopped
+
+  # ---------------------------------------------------------------
+  # Prowlarr — gerenciador central de indexadores
+  # ---------------------------------------------------------------
+  prowlarr:
+    image: lscr.io/linuxserver/prowlarr:latest
+    container_name: prowlarr
+    networks: [homelab]
+    environment:
+      - PUID=${PUID}
+      - PGID=${PGID}
+      - TZ=${TZ}
+    volumes:
+      - ${CONFIG_PATH}/prowlarr:/config
+    ports:
+      - "9696:9696"
+    restart: unless-stopped
+
+  # ---------------------------------------------------------------
+  # Flaresolverr — resolve desafios Cloudflare dos indexadores
+  # ---------------------------------------------------------------
+  flaresolverr:
+    image: ghcr.io/flaresolverr/flaresolverr:latest
+    container_name: flaresolverr
+    networks: [homelab]
+    environment:
+      - LOG_LEVEL=info
+      - TZ=${TZ}
+    ports:
+      - "8191:8191"
+    restart: unless-stopped
+
+  # ---------------------------------------------------------------
+  # Radarr — gerenciamento de FILMES
+  # ---------------------------------------------------------------
+  radarr:
+    image: lscr.io/linuxserver/radarr:latest
+    container_name: radarr
+    networks: [homelab]
+    environment:
+      - PUID=${PUID}
+      - PGID=${PGID}
+      - TZ=${TZ}
+    volumes:
+      - ${CONFIG_PATH}/radarr:/config
+      - ${MEDIA_PATH}:/data
+    ports:
+      - "7878:7878"
+    restart: unless-stopped
+
+  # ---------------------------------------------------------------
+  # Sonarr — gerenciamento de SÉRIES e ANIME
+  # Anime usa a MESMA instância: ao adicionar, escolha Series Type = Anime
+  # (numeração absoluta) e a root folder /data/media/anime. Indexadores de
+  # anime (Nyaa, AnimeTosho, etc.) são adicionados no Prowlarr — ver README.
+  # ---------------------------------------------------------------
+  sonarr:
+    image: lscr.io/linuxserver/sonarr:latest
+    container_name: sonarr
+    networks: [homelab]
+    environment:
+      - PUID=${PUID}
+      - PGID=${PGID}
+      - TZ=${TZ}
+    volumes:
+      - ${CONFIG_PATH}/sonarr:/config
+      - ${MEDIA_PATH}:/data
+    ports:
+      - "8989:8989"
+    restart: unless-stopped
+
+  # ---------------------------------------------------------------
+  # Bazarr — legendas (Português do Brasil)
+  # ---------------------------------------------------------------
+  bazarr:
+    image: lscr.io/linuxserver/bazarr:latest
+    container_name: bazarr
+    networks: [homelab]
+    environment:
+      - PUID=${PUID}
+      - PGID=${PGID}
+      - TZ=${TZ}
+    volumes:
+      - ${CONFIG_PATH}/bazarr:/config
+      - ${MEDIA_PATH}/media:/data/media
+    ports:
+      - "6767:6767"
+    restart: unless-stopped
+
+  # ---------------------------------------------------------------
+  # qBittorrent — cliente de download (sem VPN, conexão direta)
+  # ---------------------------------------------------------------
+  qbittorrent:
+    image: lscr.io/linuxserver/qbittorrent:latest
+    container_name: qbittorrent
+    networks: [homelab]
+    environment:
+      - PUID=${PUID}
+      - PGID=${PGID}
+      - TZ=${TZ}
+      - WEBUI_PORT=8080
+      - TORRENTING_PORT=6881
+    volumes:
+      - ${CONFIG_PATH}/qbittorrent:/config
+      - ${MEDIA_PATH}/torrents:/data/torrents
+    ports:
+      - "8080:8080"     # Web UI
+      - "6881:6881"     # porta de torrent (TCP)
+      - "6881:6881/udp" # porta de torrent (UDP)
+    restart: unless-stopped
+
+  # ---------------------------------------------------------------
+  # Jellyseerr — interface de pedidos (estilo Netflix)
+  # ---------------------------------------------------------------
+  jellyseerr:
+    image: fallenbagel/jellyseerr:latest
+    container_name: jellyseerr
+    networks: [homelab]
+    environment:
+      - TZ=${TZ}
+      - LOG_LEVEL=info
+    volumes:
+      - ${CONFIG_PATH}/jellyseerr:/app/config
+    ports:
+      - "5055:5055"
+    restart: unless-stopped
+
+  # ---------------------------------------------------------------
+  # Homarr — DASHBOARD central de todos os serviços
+  # ---------------------------------------------------------------
+  homarr:
+    image: ghcr.io/homarr-labs/homarr:latest
+    container_name: homarr
+    networks: [homelab]
+    environment:
+      - TZ=${TZ}
+      # Gere um segredo com:  openssl rand -hex 32   (ou veja README)
+      - SECRET_ENCRYPTION_KEY=${HOMARR_SECRET}
+    volumes:
+      - ${CONFIG_PATH}/homarr:/appdata
+      # Permite que o Homarr leia os containers Docker (widget de status)
+      - //var/run/docker.sock:/var/run/docker.sock:ro
+    ports:
+      - "7575:7575"
+    restart: unless-stopped
+
+  # ---------------------------------------------------------------
+  # Portainer — gerência visual dos containers
+  # ---------------------------------------------------------------
+  portainer:
+    image: portainer/portainer-ce:latest
+    container_name: portainer
+    networks: [homelab]
+    volumes:
+      - ${CONFIG_PATH}/portainer:/data
+      - //var/run/docker.sock:/var/run/docker.sock
+    ports:
+      - "9000:9000"
+    restart: unless-stopped
+
+  # ---------------------------------------------------------------
+  # Recyclarr — sincroniza custom formats / perfis (TRaSH Guides)
+  # Roda sob demanda:  docker compose run --rm recyclarr sync
+  # ---------------------------------------------------------------
+  recyclarr:
+    image: ghcr.io/recyclarr/recyclarr:latest
+    container_name: recyclarr
+    networks: [homelab]
+    user: ${PUID}:${PGID}
+    environment:
+      - TZ=${TZ}
+    volumes:
+      - ${CONFIG_PATH}/recyclarr:/config
+    # Mantém o container parado; só executa quando chamado manualmente
+    # ou pelo cron interno (TRASH_* abaixo).
+    restart: unless-stopped
+
+  # ---------------------------------------------------------------
+  # Watchtower — atualização automática dos containers (3h da manhã)
+  # ---------------------------------------------------------------
+  watchtower:
+    image: containrrr/watchtower:latest
+    container_name: watchtower
+    networks: [homelab]
+    environment:
+      - TZ=${TZ}
+      - WATCHTOWER_CLEANUP=true
+      - WATCHTOWER_SCHEDULE=0 0 3 * * *
+      # Engine Docker novo (29.x) exige API >= 1.40; o watchtower default
+      # negocia 1.25 e quebra. Forçamos uma versão compatível:
+      - DOCKER_API_VERSION=1.44
+    volumes:
+      - //var/run/docker.sock:/var/run/docker.sock
+    restart: unless-stopped
+
+  # ---------------------------------------------------------------
+  # Vaultwarden — gerenciador de senhas (servidor Bitwarden)
+  # ---------------------------------------------------------------
+  vaultwarden:
+    image: vaultwarden/server:latest
+    container_name: vaultwarden
+    networks: [homelab]
+    environment:
+      - TZ=${TZ}
+      - ADMIN_TOKEN=${VAULTWARDEN_ADMIN_TOKEN}
+      - SIGNUPS_ALLOWED=true
+      - DOMAIN=${VAULTWARDEN_DOMAIN}
+    volumes:
+      - ${CONFIG_PATH}/vaultwarden:/data
+    ports:
+      - "8222:80"
+    restart: unless-stopped
+
+  # ---------------------------------------------------------------
+  # Uptime Kuma — monitor de status (avisa quando algo cai)
+  # ---------------------------------------------------------------
+  uptime-kuma:
+    image: louislam/uptime-kuma:1
+    container_name: uptime-kuma
+    networks: [homelab]
+    environment:
+      - TZ=${TZ}
+    volumes:
+      - ${CONFIG_PATH}/uptime-kuma:/app/data
+    ports:
+      - "3001:3001"
+    restart: unless-stopped
+
+  # ---------------------------------------------------------------
+  # Stirling-PDF — ferramentas de PDF (juntar, dividir, OCR, etc.)
+  # ---------------------------------------------------------------
+  stirling-pdf:
+    image: stirlingtools/stirling-pdf:latest
+    container_name: stirling-pdf
+    networks: [homelab]
+    environment:
+      - TZ=${TZ}
+      - DOCKER_ENABLE_SECURITY=false
+    volumes:
+      - ${CONFIG_PATH}/stirling-pdf/configs:/configs
+      - ${CONFIG_PATH}/stirling-pdf/tessdata:/usr/share/tessdata
+    ports:
+      - "8095:8080"
+    restart: unless-stopped
+
+  # ---------------------------------------------------------------
+  # IT-Tools — caixa de ferramentas (conversores, geradores, etc.)
+  # ---------------------------------------------------------------
+  it-tools:
+    image: corentinth/it-tools:latest
+    container_name: it-tools
+    networks: [homelab]
+    environment:
+      - TZ=${TZ}
+    ports:
+      - "8082:80"
+    restart: unless-stopped
+
+  # ---------------------------------------------------------------
+  # Nextcloud — nuvem pessoal (arquivos, calendario, contatos)
+  # Banco MariaDB dedicado + dados em D: (MEDIA_PATH/nextcloud)
+  # ---------------------------------------------------------------
+  nextcloud-db:
+    image: mariadb:11
+    container_name: nextcloud-db
+    networks: [homelab]
+    command: --transaction-isolation=READ-COMMITTED --log-bin=binlog --binlog-format=ROW
+    environment:
+      - MARIADB_ROOT_PASSWORD=${NEXTCLOUD_DB_ROOT_PASSWORD}
+      - MARIADB_DATABASE=nextcloud
+      - MARIADB_USER=nextcloud
+      - MARIADB_PASSWORD=${NEXTCLOUD_DB_PASSWORD}
+    volumes:
+      - ${CONFIG_PATH}/nextcloud/db:/var/lib/mysql
+    restart: unless-stopped
+
+  nextcloud:
+    image: nextcloud:latest
+    container_name: nextcloud
+    networks: [homelab]
+    environment:
+      - MYSQL_HOST=nextcloud-db
+      - MYSQL_DATABASE=nextcloud
+      - MYSQL_USER=nextcloud
+      - MYSQL_PASSWORD=${NEXTCLOUD_DB_PASSWORD}
+      - NEXTCLOUD_DATA_DIR=/data
+      - NEXTCLOUD_TRUSTED_DOMAINS=localhost 127.0.0.1 192.168.15.16 desktop-se24the.tail634fb2.ts.net desktop-se24the.tail634fb2.ts.net:8084
+      - NEXTCLOUD_ADMIN_USER=admin
+      - NEXTCLOUD_ADMIN_PASSWORD=${NEXTCLOUD_ADMIN_PASSWORD}
+      - TZ=${TZ}
+    volumes:
+      - nextcloud-html:/var/www/html
+      - nextcloud-data:/data
+    ports:
+      - "8084:80"
+    depends_on:
+      - nextcloud-db
+    restart: unless-stopped
+
+  # ---------------------------------------------------------------
+  # Immich — fotos (alternativa ao Google Fotos)
+  # server + machine-learning + redis(valkey) + postgres(vectorchord)
+  # ---------------------------------------------------------------
+  immich-server:
+    image: ghcr.io/immich-app/immich-server:release
+    container_name: immich-server
+    networks: [homelab]
+    environment:
+      - TZ=${TZ}
+      - DB_HOSTNAME=immich-database
+      - DB_USERNAME=${IMMICH_DB_USER}
+      - DB_PASSWORD=${IMMICH_DB_PASSWORD}
+      - DB_DATABASE_NAME=immich
+      - REDIS_HOSTNAME=immich-redis
+    volumes:
+      - ${IMMICH_UPLOAD_LOCATION}:/data
+    ports:
+      - "2283:2283"
+    depends_on:
+      - immich-redis
+      - immich-database
+    restart: unless-stopped
+
+  immich-machine-learning:
+    image: ghcr.io/immich-app/immich-machine-learning:release
+    container_name: immich-machine-learning
+    networks: [homelab]
+    volumes:
+      - immich-model-cache:/cache
+    restart: unless-stopped
+
+  immich-redis:
+    image: docker.io/valkey/valkey:8-bookworm
+    container_name: immich-redis
+    networks: [homelab]
+    restart: unless-stopped
+
+  immich-database:
+    image: ghcr.io/immich-app/postgres:14-vectorchord0.4.3-pgvectors0.2.0
+    container_name: immich-database
+    networks: [homelab]
+    environment:
+      - POSTGRES_PASSWORD=${IMMICH_DB_PASSWORD}
+      - POSTGRES_USER=${IMMICH_DB_USER}
+      - POSTGRES_DB=immich
+    volumes:
+      - ${CONFIG_PATH}/immich/postgres:/var/lib/postgresql/data
+    restart: unless-stopped
+
+  # ===============================================================
+  # EXTRAS OPCIONAIS — descomente se quiser usar
+  # ===============================================================
+
+  # Unpackerr — extrai releases .rar antes do import (Radarr/Sonarr)
+  # unpackerr:
+  #   image: ghcr.io/unpackerr/unpackerr:latest
+  #   container_name: unpackerr
+  #   networks: [homelab]
+  #   environment:
+  #     - PUID=${PUID}
+  #     - PGID=${PGID}
+  #     - TZ=${TZ}
+  #   volumes:
+  #     - ${CONFIG_PATH}/unpackerr:/config
+  #     - ${MEDIA_PATH}/torrents:/data/torrents
+  #   restart: unless-stopped
+
+  # Lidarr — música
+  # lidarr:
+  #   image: lscr.io/linuxserver/lidarr:latest
+  #   container_name: lidarr
+  #   networks: [homelab]
+  #   environment:
+  #     - PUID=${PUID}
+  #     - PGID=${PGID}
+  #     - TZ=${TZ}
+  #   volumes:
+  #     - ${CONFIG_PATH}/lidarr:/config
+  #     - ${MEDIA_PATH}:/data
+  #   ports:
+  #     - "8686:8686"
+  #   restart: unless-stopped
+
+  # Readarr — livros / audiobooks
+  # readarr:
+  #   image: lscr.io/linuxserver/readarr:develop
+  #   container_name: readarr
+  #   networks: [homelab]
+  #   environment:
+  #     - PUID=${PUID}
+  #     - PGID=${PGID}
+  #     - TZ=${TZ}
+  #   volumes:
+  #     - ${CONFIG_PATH}/readarr:/config
+  #     - ${MEDIA_PATH}:/data
+  #   ports:
+  #     - "8787:8787"
+  #   restart: unless-stopped

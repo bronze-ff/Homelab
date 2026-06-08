@@ -1,0 +1,26 @@
+# Appdata / configs gerados pelos containers (DBs, caches, capas, logs, chaves)
+# São pesados (centenas de MB) e recriados sozinhos no rebuild.
+# Usamos "config/*" (e não "config/") para poder re-incluir exceções abaixo.
+config/*
+
+# ...MAS versionamos a config declarativa do Recyclarr (perfis de qualidade).
+# É IaC útil para reconstruir os Custom Formats após formatar.
+!config/recyclarr/
+config/recyclarr/*
+!config/recyclarr/recyclarr.yml
+!config/recyclarr/settings.yml
+
+# Configurações locais do Claude Code (permissões da máquina, não do homelab)
+.claude/
+
+# Logs
+*.log
+
+# Sistema
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# NOTA: este é um repositório PRIVADO. O arquivo .env (com segredos) É
+# versionado de propósito, para facilitar o rebuild após formatar a máquina.
+# Se algum dia tornar o repo PÚBLICO, adicione ".env" aqui e troque os segredos.

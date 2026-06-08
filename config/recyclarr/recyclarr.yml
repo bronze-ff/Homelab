@@ -1,0 +1,94 @@
+# =====================================================================
+# Recyclarr — sincroniza Custom Formats / Quality Profiles do TRaSH
+# Guides para o Radarr e o Sonarr.
+#
+# Objetivo neste homelab: dar dois caminhos selecionáveis ao adicionar
+# um título:
+#   • "Dublado PT-BR"      -> prioriza áudio em Português (Brasil)
+#   • "Original + Legenda" -> prioriza áudio original (legenda via Bazarr)
+#
+# COMO USAR:
+#   1. Pegue a API key de cada app (Settings > General).
+#   2. Cole abaixo em radarr.movies.api_key e sonarr.series.api_key.
+#   3. Rode:   docker compose run --rm recyclarr sync
+#   4. Os Custom Formats aparecem no Radarr/Sonarr. Depois ajuste o
+#      IDIOMA de cada Quality Profile (passo no README).
+#
+# Docs: https://recyclarr.dev  |  https://trash-guides.info
+# =====================================================================
+
+radarr:
+  movies:
+    base_url: http://radarr:7878
+    api_key: COLE_AQUI_A_API_KEY_DO_RADARR
+
+    # Definições de qualidade: DESATIVADO de propósito.
+    # Usamos um teto de ~20GB (≈170 MB/min) configurado direto no Radarr,
+    # em Settings > Quality. Se reativar o bloco abaixo, o `sync` volta aos
+    # tamanhos do TRaSH (que permitem REMUX gigante) e desfaz o limite.
+    # quality_definition:
+    #   type: movie
+
+    include:
+      # Perfil base 1080p/2160p do TRaSH
+      - template: radarr-quality-profile-hd-bluray-web
+      - template: radarr-custom-formats-hd-bluray-web
+
+    custom_formats:
+      # ---- Áudio / idioma em Português do Brasil ----
+      # Pontua POSITIVO releases dubladas/dual em PT-BR no perfil "Dublado".
+      - trash_ids:
+          - 0dc8aec3bd9b4cd3e544249575a27b05   # Brazilian Portuguese (idioma)
+        assign_scores_to:
+          - name: HD Bluray + WEB           # perfil padrão criado pelo template
+            score: 1500
+
+      # ---- Dual Audio / Multi ----
+      - trash_ids:
+          - 4b900e171accbfb172729b63323ea8ca   # Multi Audio
+        assign_scores_to:
+          - name: HD Bluray + WEB
+            score: 500
+
+sonarr:
+  series:
+    base_url: http://sonarr:8989
+    api_key: COLE_AQUI_A_API_KEY_DO_SONARR
+
+    quality_definition:
+      type: series
+
+    include:
+      - template: sonarr-quality-profile-web-1080p
+      - template: sonarr-custom-formats-web-1080p
+      # ---- ANIME ----
+      # Cria um Quality Profile "Remux-1080p - Anime" + Custom Formats próprios
+      # (dual audio, dublagem oficial, grupos de fansub etc.). Use esse perfil
+      # ao adicionar animes no Sonarr (com Series Type = Anime).
+      - template: sonarr-quality-profile-anime
+      - template: sonarr-custom-formats-anime
+
+    custom_formats:
+      - trash_ids:
+          - bb0511411cf4515fd3970c5e51d6e570   # Brazilian Portuguese (idioma)
+        assign_scores_to:
+          - name: WEB-1080p
+            score: 1500
+
+      - trash_ids:
+          - 4b900e171accbfb172729b63323ea8ca   # Multi Audio
+        assign_scores_to:
+          - name: WEB-1080p
+            score: 500
+          # No anime, dual áudio (JP + dublado) costuma ser o ideal:
+          - name: Remux-1080p - Anime
+            score: 500
+
+# =====================================================================
+# NOTA sobre os trash_ids acima:
+# Os IDs de Custom Format mudam às vezes nos guias. Se o `sync` reclamar
+# de um ID inválido, rode para listar os atuais:
+#   docker compose run --rm recyclarr list custom-formats radarr
+#   docker compose run --rm recyclarr list custom-formats sonarr
+# e substitua o ID de "Brazilian Portuguese" / "Multi Audio".
+# =====================================================================
