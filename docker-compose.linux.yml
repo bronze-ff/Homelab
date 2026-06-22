@@ -67,17 +67,17 @@ services:
     restart: unless-stopped
 
   # ---------------- Flaresolverr (bypass Cloudflare) ----------------
-  flaresolverr:
-    image: ghcr.io/flaresolverr/flaresolverr:latest
-    container_name: flaresolverr
-    networks: [homelab]
-    environment:
-      - LOG_LEVEL=info
-      - TZ=${TZ}
-    ports:
-      - "8191:8191"
-    mem_limit: 400m
-    restart: unless-stopped
+#  flaresolverr:
+#    image: ghcr.io/flaresolverr/flaresolverr:latest
+#    container_name: flaresolverr
+#    networks: [homelab]
+#    environment:
+#      - LOG_LEVEL=info
+#      - TZ=${TZ}
+#    ports:
+#      - "8191:8191"
+#    mem_limit: 400m
+#    restart: unless-stopped
 
   # ---------------- Radarr (filmes) ----------------
   radarr:
@@ -162,17 +162,17 @@ services:
     restart: unless-stopped
 
   # ---------------- Portainer (gerência) ----------------
-  portainer:
-    image: portainer/portainer-ce:latest
-    container_name: portainer
-    networks: [homelab]
-    volumes:
-      - ${CONFIG_PATH}/portainer:/data
-      - /var/run/docker.sock:/var/run/docker.sock
-    ports:
-      - "9000:9000"
-    mem_limit: 150m
-    restart: unless-stopped
+#  portainer:
+#    image: portainer/portainer-ce:latest
+#    container_name: portainer
+#    networks: [homelab]
+#    volumes:
+#      - ${CONFIG_PATH}/portainer:/data
+#      - /var/run/docker.sock:/var/run/docker.sock
+#    ports:
+#      - "9000:9000"
+#    mem_limit: 150m
+#    restart: unless-stopped
 
   # ---------------- UpSnap (Wake-on-LAN) ----------------
   # host network: necessário para escanear/acordar dispositivos na LAN
@@ -188,18 +188,18 @@ services:
     restart: unless-stopped
 
   # ---------------- Uptime-Kuma (monitor) ----------------
-  uptime-kuma:
-    image: louislam/uptime-kuma:1
-    container_name: uptime-kuma
-    networks: [homelab]
-    environment:
-      - TZ=${TZ}
-    volumes:
-      - ${CONFIG_PATH}/uptime-kuma:/app/data
-    ports:
-      - "3001:3001"
-    mem_limit: 200m
-    restart: unless-stopped
+#  uptime-kuma:
+#    image: louislam/uptime-kuma:1
+#    container_name: uptime-kuma
+#    networks: [homelab]
+#    environment:
+#      - TZ=${TZ}
+#    volumes:
+#      - ${CONFIG_PATH}/uptime-kuma:/app/data
+#    ports:
+#      - "3001:3001"
+#    mem_limit: 200m
+#    restart: unless-stopped
 
   # ---------------- Configarr (perfis TRaSH / PT-BR) ----------------
   # Roda sob demanda:  docker compose run --rm configarr

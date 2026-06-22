@@ -32,12 +32,17 @@ serviço tem `mem_limit` definido no Compose.
 | **Prowlarr** | 9696 | Indexadores |
 | **Bazarr** | 6767 | Legendas PT-BR |
 | **qBittorrent** | 8080 | Download (torrent: 6881 TCP/UDP) |
-| **Portainer** | 9000 | Gerência dos containers |
-| **Uptime-Kuma** | 3001 | Monitor de status |
+| **Portainer** | 9000 | Gerência dos containers — *opcional (comentado por padrão)* |
+| **Uptime-Kuma** | 3001 | Monitor de status — *opcional (comentado por padrão)* |
 | **UpSnap** | 8090 | Wake-on-LAN (rede do host) |
 | **Vaultwarden** | 8222 | Gerenciador de senhas |
-| **FlareSolverr** | 8191 | Bypass Cloudflare (uso interno do Prowlarr) |
+| **FlareSolverr** | 8191 | Bypass Cloudflare — *opcional (comentado por padrão; ative só com indexador Cloudflare)* |
 | Configarr | — | Perfis de qualidade TRaSH (roda sob demanda) |
+
+> ⚙️ **Por padrão, FlareSolverr, Portainer e Uptime-Kuma vêm comentados** no
+> `docker-compose.linux.yml` para economizar RAM/CPU no hardware modesto. Para
+> ligar qualquer um, descomente o bloco e rode `docker compose -f
+> docker-compose.linux.yml up -d`.
 
 ---
 
@@ -193,6 +198,13 @@ tailscale serve --bg 8222
 
 - Os `mem_limit` mantêm a soma dentro de ~3,7 GB. Evite adicionar serviços pesados
   (Nextcloud/Immich) sem aumentar a RAM.
+- **Serviços opcionais desligados:** FlareSolverr (sobe um Chrome headless e pesa),
+  Portainer e Uptime-Kuma vêm **comentados** por padrão. Reative só se precisar.
+- **Jellyfin (CPU é o gargalo):** o J1800 não tem transcode por hardware —
+  **transcodar trava tudo**. Deixe o *throttling* de transcode ligado (Dashboard →
+  Playback) e prefira **Direct Play**: use o app do Jellyfin (não o navegador),
+  legendas em **texto (SRT)** — não imagem/PGS, que força transcode — e qualidade
+  "Original" no cliente. Evite 4K nesse hardware.
 - **DNS:** alguns indexadores (1337x, EZTV) podem dar *"Name does not resolve"* por
   bloqueio de DNS do provedor. Resolva apontando DNS público nos containers
   afetados (ex.: `dns: [1.1.1.1, 8.8.8.8]` no serviço) ou no daemon do Docker.
