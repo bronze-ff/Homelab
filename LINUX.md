@@ -159,6 +159,37 @@ publique a LAN como *subnet route* no Tailscale.)
 
 ---
 
+## ⚙️ qBittorrent — rápido, sem seed, 1 por vez, auto-limpeza
+
+Configuração recomendada (TRaSH + comunidade), aplicada em *Tools → Options*:
+
+**BitTorrent → Seeding Limits:**
+- *When ratio reaches* **`0`** e *When seeding time reaches* **`0`** → ação
+  **"Stop torrent" (pausar)**. ⚠️ **Não** use "remover" aqui — quem remove é o
+  Radarr/Sonarr, depois de importar (evita apagar o arquivo antes do import).
+
+**BitTorrent → Torrent Queueing (1 por vez):**
+- Queueing **ligado**, *Max active downloads* = **`1`**, *Max active torrents* = `2`,
+  *Max active uploads* = `2`, "Do not count slow torrents" = on.
+  (1 download por vez = banda concentrada = mais rápido.)
+
+**Connection (velocidade):**
+- *Global max connections* = **`200`**, *per torrent* = **`100`**, upload slots `10`/`4`.
+- *Download/Upload rate limit* = **`0` (ilimitado)**.
+- **DHT + PeX + Local Peer Discovery = ligados** (mais peers nos trackers públicos).
+- *Encryption* = **Allow** (mais peers). *Pre-allocate disk space* = **off**.
+
+**Radarr/Sonarr → Settings → Download Clients → qBittorrent (advanced):**
+- **Remove Completed Downloads = ON** (+ Remove Failed) → após importar (hardlink),
+  removem o torrent e o arquivo do `/media/downloads`; o hardlink na biblioteca fica.
+
+> Resultado: 1 download por vez, **zero seed** ao terminar, e **limpeza automática**
+> do `/downloads` após o import. Conexões em 200 (não no talo) pra não estressar a
+> CPU/roteador do J1800. Se o upload saturar o link e atrapalhar, cape o *upload*
+> em ~70-80% da banda de subida.
+
+---
+
 ## 🏷️ Padrão de nomes de arquivos (Sonarr + Radarr)
 
 Para os arquivos saírem organizados e na ordem certa (em vez do nome cru do
