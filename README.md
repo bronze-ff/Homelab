@@ -8,6 +8,14 @@ Fluxo: você **pede** um filme/série → o sistema **encontra** nos indexadores
 fica disponível para **assistir** no Jellyfin. Tudo acessível de fora via
 **Tailscale** e centralizado no **dashboard Homarr**.
 
+> 💻 **Duas plataformas neste repo:**
+> - **Windows (Docker Desktop)** — este `README.md` + [`docker-compose.yml`](docker-compose.yml).
+> - **Linux (Debian / Docker)** — guia em **[LINUX.md](LINUX.md)** + [`docker-compose.linux.yml`](docker-compose.linux.yml) e [`.env.linux.example`](.env.linux.example).
+>
+> A versão Linux é uma stack **enxuta** (com limites de memória para hardware
+> modesto), usa **Configarr** no lugar do Recyclarr e adiciona **UpSnap**
+> (Wake-on-LAN) e **Vaultwarden**. Veja a tabela de diferenças no LINUX.md.
+
 ---
 
 ## 📦 Serviços

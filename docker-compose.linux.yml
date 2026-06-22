@@ -1,0 +1,235 @@
+####################################################################
+# Homelab — Debian (Celeron J1800 · 4 GB RAM)
+# Stack ENXUTA adaptada do repo bronze-ff/Homelab para Linux.
+# Paths: ${MEDIA_PATH} -> /media (biblioteca + downloads, hardlink-friendly)
+#        ${CONFIG_PATH}/<app> -> /config (appdata de cada serviço)
+# Limites de memória definidos por serviço (mem_limit) para caber em 4 GB.
+####################################################################
+
+networks:
+  homelab:
+    name: homelab
+    driver: bridge
+
+services:
+  # ---------------- Jellyfin (streaming) ----------------
+  jellyfin:
+    image: lscr.io/linuxserver/jellyfin:latest
+    container_name: jellyfin
+    networks: [homelab]
+    environment:
+      - PUID=${PUID}
+      - PGID=${PGID}
+      - TZ=${TZ}
+    volumes:
+      - ${CONFIG_PATH}/jellyfin:/config
+      - ${MEDIA_PATH}:/media
+    ports:
+      - "8096:8096"
+    mem_limit: 700m
+    restart: unless-stopped
+
+  # ---------------- qBittorrent (download) ----------------
+  qbittorrent:
+    image: lscr.io/linuxserver/qbittorrent:latest
+    container_name: qbittorrent
+    networks: [homelab]
+    environment:
+      - PUID=${PUID}
+      - PGID=${PGID}
+      - TZ=${TZ}
+      - WEBUI_PORT=8080
+      - TORRENTING_PORT=6881
+    volumes:
+      - ${CONFIG_PATH}/qbittorrent:/config
+      - ${MEDIA_PATH}:/media
+    ports:
+      - "8080:8080"
+      - "6881:6881"
+      - "6881:6881/udp"
+    mem_limit: 450m
+    restart: unless-stopped
+
+  # ---------------- Prowlarr (indexadores) ----------------
+  prowlarr:
+    image: lscr.io/linuxserver/prowlarr:latest
+    container_name: prowlarr
+    networks: [homelab]
+    environment:
+      - PUID=${PUID}
+      - PGID=${PGID}
+      - TZ=${TZ}
+    volumes:
+      - ${CONFIG_PATH}/prowlarr:/config
+    ports:
+      - "9696:9696"
+    mem_limit: 300m
+    restart: unless-stopped
+
+  # ---------------- Flaresolverr (bypass Cloudflare) ----------------
+  flaresolverr:
+    image: ghcr.io/flaresolverr/flaresolverr:latest
+    container_name: flaresolverr
+    networks: [homelab]
+    environment:
+      - LOG_LEVEL=info
+      - TZ=${TZ}
+    ports:
+      - "8191:8191"
+    mem_limit: 400m
+    restart: unless-stopped
+
+  # ---------------- Radarr (filmes) ----------------
+  radarr:
+    image: lscr.io/linuxserver/radarr:latest
+    container_name: radarr
+    networks: [homelab]
+    environment:
+      - PUID=${PUID}
+      - PGID=${PGID}
+      - TZ=${TZ}
+    volumes:
+      - ${CONFIG_PATH}/radarr:/config
+      - ${MEDIA_PATH}:/media
+    ports:
+      - "7878:7878"
+    mem_limit: 300m
+    restart: unless-stopped
+
+  # ---------------- Sonarr (séries + anime) ----------------
+  sonarr:
+    image: lscr.io/linuxserver/sonarr:latest
+    container_name: sonarr
+    networks: [homelab]
+    environment:
+      - PUID=${PUID}
+      - PGID=${PGID}
+      - TZ=${TZ}
+    volumes:
+      - ${CONFIG_PATH}/sonarr:/config
+      - ${MEDIA_PATH}:/media
+    ports:
+      - "8989:8989"
+    mem_limit: 300m
+    restart: unless-stopped
+
+  # ---------------- Bazarr (legendas PT-BR) ----------------
+  bazarr:
+    image: lscr.io/linuxserver/bazarr:latest
+    container_name: bazarr
+    networks: [homelab]
+    environment:
+      - PUID=${PUID}
+      - PGID=${PGID}
+      - TZ=${TZ}
+    volumes:
+      - ${CONFIG_PATH}/bazarr:/config
+      - ${MEDIA_PATH}:/media
+    ports:
+      - "6767:6767"
+    mem_limit: 300m
+    restart: unless-stopped
+
+  # ---------------- Jellyseerr (pedidos) ----------------
+  jellyseerr:
+    image: fallenbagel/jellyseerr:latest
+    container_name: jellyseerr
+    networks: [homelab]
+    environment:
+      - TZ=${TZ}
+      - LOG_LEVEL=info
+    volumes:
+      - ${CONFIG_PATH}/jellyseerr:/app/config
+    ports:
+      - "5055:5055"
+    mem_limit: 350m
+    restart: unless-stopped
+
+  # ---------------- Homarr (dashboard) ----------------
+  homarr:
+    image: ghcr.io/homarr-labs/homarr:latest
+    container_name: homarr
+    networks: [homelab]
+    environment:
+      - TZ=${TZ}
+      - SECRET_ENCRYPTION_KEY=${HOMARR_SECRET}
+    volumes:
+      - ${CONFIG_PATH}/homarr:/appdata
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    ports:
+      - "7575:7575"
+    mem_limit: 500m
+    restart: unless-stopped
+
+  # ---------------- Portainer (gerência) ----------------
+  portainer:
+    image: portainer/portainer-ce:latest
+    container_name: portainer
+    networks: [homelab]
+    volumes:
+      - ${CONFIG_PATH}/portainer:/data
+      - /var/run/docker.sock:/var/run/docker.sock
+    ports:
+      - "9000:9000"
+    mem_limit: 150m
+    restart: unless-stopped
+
+  # ---------------- UpSnap (Wake-on-LAN) ----------------
+  # host network: necessário para escanear/acordar dispositivos na LAN
+  upsnap:
+    image: ghcr.io/seriousm4x/upsnap:latest
+    container_name: upsnap
+    network_mode: host
+    environment:
+      - TZ=${TZ}
+    volumes:
+      - ${CONFIG_PATH}/upsnap:/app/pb_data
+    mem_limit: 150m
+    restart: unless-stopped
+
+  # ---------------- Uptime-Kuma (monitor) ----------------
+  uptime-kuma:
+    image: louislam/uptime-kuma:1
+    container_name: uptime-kuma
+    networks: [homelab]
+    environment:
+      - TZ=${TZ}
+    volumes:
+      - ${CONFIG_PATH}/uptime-kuma:/app/data
+    ports:
+      - "3001:3001"
+    mem_limit: 200m
+    restart: unless-stopped
+
+  # ---------------- Configarr (perfis TRaSH / PT-BR) ----------------
+  # Roda sob demanda:  docker compose run --rm configarr
+  # (NÃO faz restart em loop — é uma ferramenta one-shot)
+  configarr:
+    image: ghcr.io/raydak-labs/configarr:latest
+    container_name: configarr
+    networks: [homelab]
+    user: ${PUID}:${PGID}
+    environment:
+      - TZ=${TZ}
+    volumes:
+      - ${CONFIG_PATH}/configarr/config:/app/config
+      - ${CONFIG_PATH}/configarr/cfs:/app/cfs
+      - ${CONFIG_PATH}/configarr/repos:/app/repos
+    restart: "no"
+
+  # ---------------- Vaultwarden (gerenciador de senhas) ----------------
+  vaultwarden:
+    image: vaultwarden/server:latest
+    container_name: vaultwarden
+    networks: [homelab]
+    environment:
+      - TZ=${TZ}
+      - ADMIN_TOKEN=${VAULTWARDEN_ADMIN_TOKEN}
+      - DOMAIN=${VAULTWARDEN_DOMAIN}
+      - SIGNUPS_ALLOWED=false
+    volumes:
+      - ${CONFIG_PATH}/vaultwarden:/data
+    ports:
+      - "8222:80"
+    mem_limit: 200m
+    restart: unless-stopped
