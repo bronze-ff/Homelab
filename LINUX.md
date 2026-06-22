@@ -159,6 +159,52 @@ publique a LAN como *subnet route* no Tailscale.)
 
 ---
 
+## 🇧🇷 Dublado PT-BR sem FlareSolverr (leve, p/ hardware fraco)
+
+Raspar sites BR (Comando/BluDV) via `felipemarinho97/torrent-indexer` exige
+**FlareSolverr** (Chrome headless) — **inviável no J1800** (testado: load 13+, Chrome
+crasha). A alternativa que **funciona e não pesa**: indexadores públicos agregadores
++ um Custom Format que prioriza releases dublados.
+
+1. **Indexadores (Prowlarr → Add Indexer — públicos, sem FlareSolverr):**
+   **Knaben** (meta-search, agrega vários sites), **The Pirate Bay** (tem releases
+   `Dual`), **Torrent Downloads**. Depois *Sync App Indexers* p/ Radarr/Sonarr.
+
+2. **Custom Format `PT-BR Dublado`** (Radarr **e** Sonarr → Settings → Custom Formats):
+   condição *Release Title* com a regex abaixo.
+   ```json
+   {
+     "name": "PT-BR Dublado",
+     "includeCustomFormatWhenRenaming": false,
+     "specifications": [
+       {
+         "name": "PT-BR",
+         "implementation": "ReleaseTitleSpecification",
+         "negate": false,
+         "required": false,
+         "fields": [
+           { "name": "value", "value": "(?i)\\b(portugu[eê]s|pt[-._ ]?br|dublado|nacional|dual|bludv|comando)\\b" }
+         ]
+       }
+     ]
+   }
+   ```
+
+3. **Perfil `Dublado PT-BR`** (Settings → Profiles):
+   - **Language = Any** ⚠️ (NÃO `Portuguese (Brazil)` — senão o Radarr rejeita o
+     release dual/dublado por "idioma não é o desejado").
+   - Custom Format **`PT-BR Dublado` → score `10000`**.
+   - **Minimum Custom Format Score = `10000`** → só passam releases que casam o CF
+     (as pontuações normais do TRaSH não chegam a 10000, então conteúdo só-inglês é
+     barrado e só dublado/dual entra).
+   - Qualidades só até **1080p** (sem 4K).
+
+> O perfil **`Original + Legenda`** continua com **Language = Original** + legenda
+> PT-BR automática do Bazarr. No Jellyseerr, *Advanced → Quality Profile* escolhe
+> entre os dois por pedido (padrão = Original + Legenda).
+
+---
+
 ## 🔐 Vaultwarden — restaurar de um backup `ttionya/vaultwarden-backup`
 
 O backup é um `.7z` (AES-256, nomes ocultos) com `db.<data>.sqlite3` +
