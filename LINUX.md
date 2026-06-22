@@ -159,6 +159,39 @@ publique a LAN como *subnet route* no Tailscale.)
 
 ---
 
+## 🏷️ Padrão de nomes de arquivos (Sonarr + Radarr)
+
+Para os arquivos saírem organizados e na ordem certa (em vez do nome cru do
+release), ative o **rename** e use estes formatos.
+
+### Sonarr — Settings → Media Management → Episode Naming
+- **Rename Episodes:** ✅ *(vinha **desligado** por padrão — era o motivo dos nomes bagunçados/fora de ordem)*
+- **Standard Episode Format:**
+  `{Series Title} - S{season:00}E{episode:00} - {Episode Title} [{Quality Full}]`
+- **Anime Episode Format:** *(inclui o número **absoluto** — essencial p/ a ordem do anime)*
+  `{Series Title} - S{season:00}E{episode:00} - {absolute:000} - {Episode Title} [{Quality Full}]`
+- **Series Folder:** `{Series Title}` · **Season Folder:** `Season {season:00}`
+- **Multi Episode Style:** Prefixed Range (`S01E01-E03`)
+
+Exemplos:
+```
+Breaking Bad/Season 01/Breaking Bad - S01E05 - Gray Matter [WEBDL-1080p].mkv
+One Piece/Season 21/One Piece - S21E1093 - 1093 - <titulo> [WEBDL-1080p].mkv
+```
+
+> ⚠️ **Ao adicionar um anime, marque `Series Type: Anime`** (root `/media/animes`).
+> É isso que ativa a numeração absoluta; se adicionar como *Standard*, a ordem
+> bagunça. Séries normais = `Standard`.
+
+### Radarr — Settings → Media Management
+- **Rename Movies:** ✅ *(também vinha desligado)*
+- **Standard Movie Format:** `{Movie Title} ({Release Year}) [{Quality Full}]`
+- **Movie Folder Format:** `{Movie Title} ({Release Year})`
+
+Exemplo: `Interestelar (2014)/Interestelar (2014) [Bluray-1080p].mkv`
+
+---
+
 ## 🇧🇷 Dublado PT-BR sem FlareSolverr (leve, p/ hardware fraco)
 
 Raspar sites BR (Comando/BluDV) via `felipemarinho97/torrent-indexer` exige
