@@ -190,6 +190,48 @@ Configuração recomendada (TRaSH + comunidade), aplicada em *Tools → Options*
 
 ---
 
+## 🎯 Seleção de releases (tamanho, seeds, qualidade)
+
+Ajustes pra **pegar os melhores torrents**: não muito grande, boa qualidade e
+seeds reais.
+
+### Faixa de tamanho — Radarr/Sonarr → Settings → Quality (Quality Definitions)
+Para 1080p (todas as fontes WEB/Bluray):
+
+| | MB/min | ≈ filme 2h |
+|---|---|---|
+| **Minimum** | `5` | ~0.6 GB (deixa passar encode **pequeno e bem-seedado**) |
+| **Preferred** | `145` | ~17 GB (mira boa qualidade) |
+| **Maximum** | `150` | ~18 GB (bloqueia remux / 4K-bitrate / multi-áudio gigante) |
+
+> ⚠️ **Comente o `quality_definition` no `config/configarr/config/config.yml`** —
+> senão o **Configarr reseta esses tamanhos** (de volta ao TRaSH) toda vez que roda.
+
+### Mínimo de seeders — Radarr/Sonarr → Settings → Indexers → (cada) → Minimum Seeders
+- **`3`** → ignora torrents quase mortos.
+- ⚠️ A contagem de seeds **reportada** pelo indexador às vezes é fantasma (diz "8",
+  mas tem 0 reais). Não existe filtro perfeito. Por isso o **Minimum baixo (5 MB/min)**:
+  pra conteúdo antigo/nicho, uma versão **menor com muitos seeds reais** (ex.: BRRip
+  2 GB com 600+ seeds) baixa bem — não deixe o tamanho mínimo barrá-la.
+
+### Trackers públicos — qBittorrent → Options → BitTorrent
+- ✅ **"Automatically add these trackers to new downloads"** + colar uma lista de
+  trackers públicos (ex.: `ngosang/trackerslist` → `trackers_best.txt`).
+- Resolve torrent preso em **"Downloading metadata"** / `0 (0)` peers (o release até
+  tem seeds, mas o qBit não os acha sem trackers). DHT + PeX + LSD também ligados.
+
+### Propers/Repacks — Radarr/Sonarr → Settings → Media Management
+- **"Do not Prefer"** (recomendação TRaSH) — evita re-download à toa.
+
+### Qualidade
+- Quality Profiles + Custom Formats do **TRaSH** (via Configarr) preferem boas fontes
+  e penalizam CAM/LQ/x265-ruim/etc.
+
+> 📌 Regra geral: o sistema **prefere** uma boa versão (~15 GB), mas **aceita** uma
+> menor bem-seedada quando é só o que tem com seeds reais — e **nunca** pega gigante.
+
+---
+
 ## 🏷️ Padrão de nomes de arquivos (Sonarr + Radarr)
 
 Para os arquivos saírem organizados e na ordem certa (em vez do nome cru do
