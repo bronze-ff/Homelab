@@ -269,6 +269,29 @@ crasha). A alternativa que **funciona e não pesa**: indexadores públicos agreg
 
 ---
 
+## 💬 Legendas PT-BR (Bazarr)
+
+- **Idioma:** perfil **Portuguese (Brazil)** como padrão (filmes + séries).
+- **Provider que funciona: OpenSubtitles.com** (conta grátis). Em *Settings →
+  Providers → OpenSubtitles.com*:
+  - ⚠️ **É o USERNAME, não o e-mail!** O OpenSubtitles.com loga pelo **nome de
+    usuário** (ex.: `filippe`). Usuário errado → `AuthenticationError` e **zero
+    legendas** — parece "não tem legenda", mas é o **login falhando**.
+  - Preencha usuário + senha. (O Bazarr já traz uma api_key embutida; não precisa.)
+- **Providers que NÃO funcionam aqui — mantenha DESATIVADOS:** `podnapisi`
+  (domínio inacessível, ConnectionError) e `subf2m` (ConfigurationError). Se ficarem
+  ligados, entopem a busca com *"All providers are throttled"* (= 0 legendas).
+- **Minimum Score:** padrão 90 (séries) / 70 (filmes) — ok.
+
+> 🩺 Diagnóstico: `GET /api/providers` (header `X-API-KEY`) mostra o status real
+> (`Good` / `AuthenticationError` / `ConfigurationError`). Para limpar throttle:
+> *Settings → Providers* → reset, ou `POST /api/providers?action=reset`.
+>
+> As legendas baixam **depois do import** do vídeo (não durante o download). Anime
+> em lançamento tem bem menos legenda PT-BR que séries/filmes.
+
+---
+
 ## 🔐 Vaultwarden — restaurar de um backup `ttionya/vaultwarden-backup`
 
 O backup é um `.7z` (AES-256, nomes ocultos) com `db.<data>.sqlite3` +
