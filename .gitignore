@@ -21,6 +21,6 @@ config/recyclarr/*
 Thumbs.db
 desktop.ini
 
-# NOTA: este é um repositório PRIVADO. O arquivo .env (com segredos) É
-# versionado de propósito, para facilitar o rebuild após formatar a máquina.
-# Se algum dia tornar o repo PÚBLICO, adicione ".env" aqui e troque os segredos.
+
+# Segredos: NUNCA versionar o .env (senhas/tokens reais). Use .env.example.
+.env

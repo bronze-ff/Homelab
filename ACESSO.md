@@ -31,7 +31,7 @@
 ### Logins
 | Serviço | Usuário | Senha |
 |---|---|---|
-| **qBittorrent** | `admin` | `***REMOVED***` |
+| **qBittorrent** | `admin` | `<SUA_SENHA>` |
 | Jellyfin | *(você cria no 1º acesso)* | *(você define)* |
 | Jellyseerr | *(login do Jellyfin)* | — |
 | Homarr | *(você cria no 1º acesso)* | — |
@@ -40,10 +40,10 @@
 ### API Keys (necessárias nos formulários de conexão)
 | Serviço | API Key |
 |---|---|
-| **Radarr** | `***REMOVED***` |
-| **Sonarr** | `***REMOVED***` |
-| **Prowlarr** | `***REMOVED***` |
-| **Bazarr** | `***REMOVED***` |
+| **Radarr** | `<API_KEY_RADARR>` |
+| **Sonarr** | `<API_KEY_SONARR>` |
+| **Prowlarr** | `<API_KEY_PROWLARR>` |
+| **Bazarr** | `<API_KEY_BAZARR>` |
 
 > Onde achar de novo: em cada app → **Settings → General → API Key**.
 
@@ -81,13 +81,13 @@ Dentro da rede Docker os serviços se enxergam pelo **nome**, não por localhost
 2. **Jellyfin URL:** `http://jellyfin:8096` — entre com o usuário/senha do Passo 1.
 3. *Settings → Services → Radarr → Add Radarr Server*:
    - Hostname/URL: `http://radarr:7878`
-   - API Key: `***REMOVED***`
+   - API Key: `<API_KEY_RADARR>`
    - Root Folder: `/data/media/movies`
    - Quality Profile padrão: **Original + Legenda** (ou Dublado PT-BR)
    - Salve (Test deve ficar verde).
 4. *Settings → Services → Sonarr → Add Sonarr Server*:
    - URL: `http://sonarr:8989`
-   - API Key: `***REMOVED***`
+   - API Key: `<API_KEY_SONARR>`
    - Root Folder: `/data/media/tv`
    - Quality Profile padrão à sua escolha.
 
