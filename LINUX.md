@@ -138,6 +138,7 @@ Servidor atual: **LAN `192.168.15.39`** · **Tailscale `100.91.54.116`**
 | Uptime-Kuma | http://192.168.15.39:3001 | http://100.91.54.116:3001 |
 | UpSnap | http://192.168.15.39:8090 | http://100.91.54.116:8090 |
 | Vaultwarden | http://192.168.15.39:8222 | http://100.91.54.116:8222 |
+| Filebrowser | http://192.168.15.39:8081 | http://100.91.54.116:8081 |
 
 ### 💡 Homarr: tiles que funcionam dentro E fora da rede
 
