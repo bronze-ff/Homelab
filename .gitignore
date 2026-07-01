@@ -10,6 +10,14 @@ config/recyclarr/*
 !config/recyclarr/recyclarr.yml
 !config/recyclarr/settings.yml
 
+# Configarr: ferramenta REAL em uso (o recyclarr acima é legado).
+# Versiona SÓ o config.yml declarativo. NUNCA o secrets.yml (API keys reais).
+!config/configarr/
+config/configarr/*
+!config/configarr/config/
+config/configarr/config/*
+!config/configarr/config/config.yml
+
 # Configurações locais do Claude Code (permissões da máquina, não do homelab)
 .claude/
 

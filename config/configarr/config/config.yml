@@ -1,0 +1,52 @@
+# Configarr — sincroniza Custom Formats / Quality Profiles do TRaSH Guides
+# Rodar:  cd ~/streaming && docker compose run --rm configarr
+trashGuideUrl: https://github.com/TRaSH-Guides/Guides
+
+# --- Custom Format LOCAL da casa ---
+# Bloqueia releases "Dual" do grupo YG (⭐): áudio enxertado -> desync.
+# Ex.: "The.Drama.2026...H264.Dual.YG⭐", "Obsession.2026...Dual.YG⭐".
+customFormatDefinitions:
+  - trash_id: mc-block-yg-dual
+    name: "Blocklist YG-Dual (graft)"
+    includeCustomFormatWhenRenaming: false
+    specifications:
+      - name: "YG dual graft"
+        implementation: ReleaseTitleSpecification
+        negate: false
+        required: true
+        fields:
+          value: "(?i)dual[ ._-]?yg"
+
+radarr:
+  radarr:
+    base_url: http://radarr:7878
+    api_key: !secret RADARR_API_KEY
+#    quality_definition:
+#      type: movie
+    include:
+      - template: radarr-quality-definition-movie
+      - template: radarr-quality-profile-hd-bluray-web
+      - template: radarr-custom-formats-hd-bluray-web
+    custom_formats:
+      - trash_ids:
+          - mc-block-yg-dual
+        assign_scores_to:
+          - name: HD Bluray + WEB
+            score: -10000
+
+sonarr:
+  sonarr:
+    base_url: http://sonarr:8989
+    api_key: !secret SONARR_API_KEY
+#    quality_definition:
+#      type: series
+    include:
+      - template: sonarr-quality-definition-series
+      - template: sonarr-v4-quality-profile-web-1080p
+      - template: sonarr-v4-custom-formats-web-1080p
+    custom_formats:
+      - trash_ids:
+          - mc-block-yg-dual
+        assign_scores_to:
+          - name: WEB-1080p
+            score: -10000
