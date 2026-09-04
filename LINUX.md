@@ -31,18 +31,17 @@ serviço tem `mem_limit` definido no Compose.
 | **Sonarr** | 8989 | Séries + anime |
 | **Prowlarr** | 9696 | Indexadores |
 | **Bazarr** | 6767 | Legendas PT-BR |
-| **qBittorrent** | 8080 | Download (torrent: 6881 TCP/UDP) |
+| **qBittorrent** | 18080 | Download (torrent: 6881 TCP/UDP) |
 | **Portainer** | 9000 | Gerência dos containers — *opcional (comentado por padrão)* |
 | **Uptime-Kuma** | 3001 | Monitor de status — *opcional (comentado por padrão)* |
 | **UpSnap** | 8090 | Wake-on-LAN (rede do host) |
 | **Vaultwarden** | 8222 | Gerenciador de senhas |
-| **FlareSolverr** | 8191 | Bypass Cloudflare — *opcional (comentado por padrão; ative só com indexador Cloudflare)* |
+| **FlareSolverr** | 8191 | Bypass Cloudflare — ativo para indexadores que exigem desafio |
 | Configarr | — | Perfis de qualidade TRaSH (roda sob demanda) |
 
-> ⚙️ **Por padrão, FlareSolverr, Portainer e Uptime-Kuma vêm comentados** no
-> `docker-compose.linux.yml` para economizar RAM/CPU no hardware modesto. Para
-> ligar qualquer um, descomente o bloco e rode `docker compose -f
-> docker-compose.linux.yml up -d`.
+> ⚙️ **FlareSolverr fica ativo** porque há indexadores configurados que usam
+> Cloudflare. Portainer e Uptime-Kuma continuam comentados para evitar expor
+> novas interfaces administrativas; ligue-os somente se precisar.
 
 ---
 
@@ -86,7 +85,7 @@ docker compose -f docker-compose.linux.yml ps      # status
 > API key sozinhos em `config/<app>/config.xml`. As URLs internas usam o **nome do
 > container** na rede `homelab` (ex.: `http://radarr:7878`).
 
-1. **qBittorrent** (`:8080`) — usuário `admin`; a senha temporária aparece em
+1. **qBittorrent** (`:18080`) — usuário `admin`; a senha temporária aparece em
    `docker logs qbittorrent`. Troque em *Tools → Options → Web UI*. Default save
    path `/media/downloads`; crie as categorias `radarr` → `/media/downloads/radarr`
    e `sonarr` → `/media/downloads/sonarr`.
@@ -119,6 +118,20 @@ docker compose -f docker-compose.linux.yml ps      # status
 
 ---
 
+## 📱 Jellyfin no iPhone
+
+O acesso remoto do Jellyfin usa a porta `8096`. Para o aplicativo oficial do
+iOS, arquivos MKV com E-AC-3/Dolby Atmos podem gerar o erro
+`AVFoundationErrorDomain -11850` quando o Native Video Player tenta tocar o
+áudio diretamente. O servidor já mantém o FFmpeg e a transcodificação de áudio
+habilitados; no iPhone, desative **Native Video Player** nas configurações do
+app ou use o Swiftfin. Isso preserva o áudio original em mandarim e permite ao
+servidor entregar AAC compatível, com a legenda PT-BR selecionada no player.
+
+Para acesso fora da rede, prefira Tailscale ou um domínio com HTTPS. Não
+publique as interfaces de administração (qBittorrent, Sonarr, Radarr,
+Prowlarr e Bazarr) diretamente na internet.
+
 ## 🌐 Mapa de acesso (LAN + Tailscale)
 
 Servidor atual: **LAN `192.168.15.39`** · **Tailscale `100.91.54.116`**
@@ -133,7 +146,7 @@ Servidor atual: **LAN `192.168.15.39`** · **Tailscale `100.91.54.116`**
 | Sonarr | http://192.168.15.39:8989 | http://100.91.54.116:8989 |
 | Prowlarr | http://192.168.15.39:9696 | http://100.91.54.116:9696 |
 | Bazarr | http://192.168.15.39:6767 | http://100.91.54.116:6767 |
-| qBittorrent | http://192.168.15.39:8080 | http://100.91.54.116:8080 |
+| qBittorrent | http://192.168.15.39:18080 | http://100.91.54.116:18080 |
 | Portainer | http://192.168.15.39:9000 | http://100.91.54.116:9000 |
 | Uptime-Kuma | http://192.168.15.39:3001 | http://100.91.54.116:3001 |
 | UpSnap | http://192.168.15.39:8090 | http://100.91.54.116:8090 |
@@ -374,8 +387,10 @@ tailscale serve --bg 8222
 
 - Os `mem_limit` mantêm a soma dentro de ~3,7 GB. Evite adicionar serviços pesados
   (Nextcloud/Immich) sem aumentar a RAM.
-- **Serviços opcionais desligados:** FlareSolverr (sobe um Chrome headless e pesa),
-  Portainer e Uptime-Kuma vêm **comentados** por padrão. Reative só se precisar.
+- **Serviços opcionais desligados:** Portainer e Uptime-Kuma vêm **comentados** por
+  padrão. O FlareSolverr está ativo nesta implantação porque é usado pelos
+  indexadores que enfrentam Cloudflare; desligue-o apenas se esses indexadores
+  forem removidos.
 - **Jellyfin (CPU é o gargalo):** o J1800 não tem transcode por hardware —
   **transcodar trava tudo**. Deixe o *throttling* de transcode ligado (Dashboard →
   Playback) e prefira **Direct Play**: use o app do Jellyfin (não o navegador),

@@ -420,4 +420,13 @@ Descomente no `docker-compose.yml` se quiser:
   para adicionar um container **Gluetun** e rotear o qBittorrent por ele.
 - **Indexadores privados** podem exigir cadastro/convite — não há como automatizar
   sem suas credenciais.
-- Nunca exponha as portas direto na internet (port-forward). Use **Tailscale**.
+- Publique externamente somente o streaming, sempre que possível via HTTPS ou
+  Tailscale. Não exponha qBittorrent, Sonarr, Radarr, Prowlarr ou Bazarr por
+  port-forward; essas interfaces precisam ficar na LAN/VPN.
+
+### 📱 Jellyfin no iPhone
+
+Se o app oficial do iOS apresentar `AVFoundationErrorDomain -11850` em um
+arquivo com E-AC-3/Dolby Atmos, desative **Native Video Player** nas opções do
+app ou use o Swiftfin. O Jellyfin mantém o FFmpeg e a transcodificação de áudio
+habilitados para entregar AAC compatível, sem trocar o idioma original.

@@ -24,6 +24,14 @@
 > IP do Tailscale deste PC: **100.124.35.68** (acesse de qualquer dispositivo
 > logado na sua conta Tailscale).
 
+### VPS de streaming
+
+O Jellyfin da VPS usa a porta pública de streaming definida no provedor. No
+app Jellyfin para iPhone, cadastre essa URL e mantenha o acesso administrativo
+pela VPN/Tailscale. Se aparecer `AVFoundationErrorDomain -11850` em arquivos
+com Dolby Digital Plus/Atmos, desative **Native Video Player** no app ou use o
+Swiftfin; o servidor está preparado para transcodificar o áudio para AAC.
+
 ---
 
 ## 🔑 Credenciais e chaves

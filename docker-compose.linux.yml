@@ -44,7 +44,7 @@ services:
       - ${CONFIG_PATH}/qbittorrent:/config
       - ${MEDIA_PATH}:/media
     ports:
-      - "8080:8080"
+      - "18080:8080"
       - "6881:6881"
       - "6881:6881/udp"
     mem_limit: 450m
@@ -67,17 +67,17 @@ services:
     restart: unless-stopped
 
   # ---------------- Flaresolverr (bypass Cloudflare) ----------------
-#  flaresolverr:
-#    image: ghcr.io/flaresolverr/flaresolverr:latest
-#    container_name: flaresolverr
-#    networks: [homelab]
-#    environment:
-#      - LOG_LEVEL=info
-#      - TZ=${TZ}
-#    ports:
-#      - "8191:8191"
-#    mem_limit: 400m
-#    restart: unless-stopped
+  flaresolverr:
+    image: ghcr.io/flaresolverr/flaresolverr:latest
+    container_name: flaresolverr
+    networks: [homelab]
+    environment:
+      - LOG_LEVEL=info
+      - TZ=${TZ}
+    ports:
+      - "8191:8191"
+    mem_limit: 1g
+    restart: unless-stopped
 
   # ---------------- Radarr (filmes) ----------------
   radarr:
