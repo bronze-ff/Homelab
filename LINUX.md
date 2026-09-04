@@ -60,6 +60,22 @@ ssh -i "$HOME\.ssh\olume-vps" -N `
 Depois, use `http://localhost:<porta>`. A porta `6881` permanece pública apenas
 para o tráfego de pares BitTorrent; ela não expõe o painel do qBittorrent.
 
+### Monitoramento automático de episódios no Sonarr
+
+Para séries em lançamento, mantenha a série como **Monitored**, use
+**Monitor New Episodes = All** e marque os episódios futuros como monitorados.
+Com os indexadores sincronizados pelo Prowlarr, o Sonarr consulta o feed RSS
+periodicamente e envia automaticamente releases aprovados para o qBittorrent
+na categoria `sonarr`; depois do download, importa o vídeo e o Bazarr procura a
+legenda PT-BR.
+
+Na implantação atual, **The Early Spring (2026)** está com os episódios
+S01E15–S01E24 monitorados, perfil **HD-1080p • Audio Original (≤2.4GB/ep)**,
+áudio original e legenda PT-BR. O RSS do Sonarr está configurado para sincronizar
+a cada 15 minutos. A busca automática e o RSS estão habilitados nos indexadores
+ativos; um episódio só entra na fila quando existe um release elegível, então a
+ausência de um torrent não é erro de monitoramento.
+
 ---
 
 ## 1️⃣ Pré-requisitos
@@ -149,40 +165,31 @@ Para acesso fora da rede, prefira Tailscale ou um domínio com HTTPS. Não
 publique as interfaces de administração (qBittorrent, Sonarr, Radarr,
 Prowlarr e Bazarr) diretamente na internet.
 
-## 🌐 Mapa de acesso (LAN + Tailscale)
+## 🌐 Mapa de acesso atual
 
-Servidor atual: **LAN `192.168.15.39`** · **Tailscale `100.91.54.116`**
-(hostname MagicDNS `debian`). Tudo é **HTTP**.
+A VPS atual não tem Tailscale instalado. Tudo é **HTTP**: somente Jellyfin,
+Jellyseerr e Vaultwarden estão publicados externamente; Sonarr, Radarr,
+Prowlarr, Bazarr, Homarr, Filebrowser e o painel do qBittorrent escutam apenas
+em `127.0.0.1` e devem ser acessados pelo túnel SSH acima.
 
-| Serviço | Local (LAN) | Tailscale (de fora) |
+| Serviço | Acesso externo atual | Acesso administrativo |
 |---|---|---|
-| Homarr | http://192.168.15.39:7575 | http://100.91.54.116:7575 |
-| Jellyfin | http://192.168.15.39:8096 | http://100.91.54.116:8096 |
-| Jellyseerr | http://192.168.15.39:5055 | http://100.91.54.116:5055 |
-| Radarr | http://192.168.15.39:7878 | http://100.91.54.116:7878 |
-| Sonarr | http://192.168.15.39:8989 | http://100.91.54.116:8989 |
-| Prowlarr | http://192.168.15.39:9696 | http://100.91.54.116:9696 |
-| Bazarr | http://192.168.15.39:6767 | http://100.91.54.116:6767 |
-| qBittorrent | http://192.168.15.39:18080 | http://100.91.54.116:18080 |
-| Portainer | http://192.168.15.39:9000 | http://100.91.54.116:9000 |
-| Uptime-Kuma | http://192.168.15.39:3001 | http://100.91.54.116:3001 |
-| UpSnap | http://192.168.15.39:8090 | http://100.91.54.116:8090 |
-| Vaultwarden | http://192.168.15.39:8222 | http://100.91.54.116:8222 |
-| Filebrowser | http://192.168.15.39:8081 | http://100.91.54.116:8081 |
+| Jellyfin | `http://179.198.105.75:8096` | público para streaming |
+| Jellyseerr | `http://179.198.105.75:5055` | público para pedidos |
+| Vaultwarden | `http://179.198.105.75:8222` | público; prefira HTTPS/Tailscale |
+| Sonarr | não publicado | `http://localhost:8989` via túnel |
+| Radarr | não publicado | `http://localhost:7878` via túnel |
+| Prowlarr | não publicado | `http://localhost:9696` via túnel |
+| Bazarr | não publicado | `http://localhost:6767` via túnel |
+| Homarr | não publicado | `http://localhost:7575` via túnel |
+| Filebrowser | não publicado | `http://localhost:8081` via túnel |
+| qBittorrent | não publicado | `http://localhost:18080` via túnel |
 
-### 💡 Homarr: tiles que funcionam dentro E fora da rede
+### 💡 Acesso privado futuro
 
-O clique num tile abre **uma URL fixa** — o Homarr não troca de URL conforme a
-rede. Por isso, use o **IP do Tailscale** (`100.91.54.116`) nos tiles:
-
-- **Fora de casa:** o Tailscale roteia até o servidor. ✅
-- **Em casa:** o Tailscale também funciona (conexão direta na LAN ou via DERP),
-  desde que o dispositivo esteja com o Tailscale ligado. ✅
-
-Ou seja, **um IP Tailscale serve nos dois cenários**, enquanto o IP LAN
-(`192.168.15.39`) só funciona dentro de casa. (Dispositivos sem Tailscale na LAN —
-ex.: uma TV — precisariam do IP LAN; nesse caso, ou instale o Tailscale neles, ou
-publique a LAN como *subnet route* no Tailscale.)
+Se Tailscale for instalado no futuro, ele é a opção preferível para publicar os
+serviços privados entre dispositivos confiáveis, sem abrir as interfaces de
+administração na internet. Até lá, use o túnel SSH para os painéis.
 
 > As **integrações** do Homarr (widgets de status/fila) são feitas pelo backend
 > do servidor → podem usar `http://<container>:porta` ou o IP LAN; não precisam do
