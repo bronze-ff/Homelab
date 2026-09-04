@@ -24,24 +24,41 @@ serviço tem `mem_limit` definido no Compose.
 
 | Serviço | Porta | Função |
 |---|---|---|
-| **Homarr** | 7575 | Dashboard central |
-| **Jellyfin** | 8096 | Streaming |
-| **Jellyseerr** | 5055 | Pedidos de filmes/séries |
-| **Radarr** | 7878 | Filmes |
-| **Sonarr** | 8989 | Séries + anime |
-| **Prowlarr** | 9696 | Indexadores |
-| **Bazarr** | 6767 | Legendas PT-BR |
-| **qBittorrent** | 18080 | Download (torrent: 6881 TCP/UDP) |
+| **Homarr** | 7575 (localhost) | Dashboard central |
+| **Jellyfin** | 8096 (pública) | Streaming |
+| **Jellyseerr** | 5055 (pública) | Pedidos de filmes/séries |
+| **Radarr** | 7878 (localhost) | Filmes |
+| **Sonarr** | 8989 (localhost) | Séries + anime |
+| **Prowlarr** | 9696 (localhost) | Indexadores |
+| **Bazarr** | 6767 (localhost) | Legendas PT-BR |
+| **qBittorrent** | 18080 (localhost) | Download (torrent: 6881 TCP/UDP) |
 | **Portainer** | 9000 | Gerência dos containers — *opcional (comentado por padrão)* |
 | **Uptime-Kuma** | 3001 | Monitor de status — *opcional (comentado por padrão)* |
 | **UpSnap** | 8090 | Wake-on-LAN (rede do host) |
 | **Vaultwarden** | 8222 | Gerenciador de senhas |
-| **FlareSolverr** | 8191 | Bypass Cloudflare — ativo para indexadores que exigem desafio |
+| **FlareSolverr** | 8191 (localhost) | Bypass Cloudflare — ativo para indexadores que exigem desafio |
 | Configarr | — | Perfis de qualidade TRaSH (roda sob demanda) |
 
 > ⚙️ **FlareSolverr fica ativo** porque há indexadores configurados que usam
-> Cloudflare. Portainer e Uptime-Kuma continuam comentados para evitar expor
-> novas interfaces administrativas; ligue-os somente se precisar.
+> Cloudflare. As interfaces administrativas ficam presas ao `localhost` da VPS;
+> somente Jellyfin, Jellyseerr e Vaultwarden são publicados. Portainer e
+> Uptime-Kuma continuam comentados para evitar expor novas interfaces.
+
+### Acesso administrativo seguro na VPS
+
+Para abrir os painéis administrativos no computador local, use um túnel SSH
+(os containers continuam conversando normalmente pela rede Docker):
+
+```powershell
+ssh -i "$HOME\.ssh\olume-vps" -N `
+  -L 7575:127.0.0.1:7575 -L 7878:127.0.0.1:7878 `
+  -L 8989:127.0.0.1:8989 -L 9696:127.0.0.1:9696 `
+  -L 6767:127.0.0.1:6767 -L 18080:127.0.0.1:18080 `
+  -L 8081:127.0.0.1:8081 root@179.198.105.75
+```
+
+Depois, use `http://localhost:<porta>`. A porta `6881` permanece pública apenas
+para o tráfego de pares BitTorrent; ela não expõe o painel do qBittorrent.
 
 ---
 

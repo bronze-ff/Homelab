@@ -44,7 +44,7 @@ services:
       - ${CONFIG_PATH}/qbittorrent:/config
       - ${MEDIA_PATH}:/media
     ports:
-      - "18080:8080"
+      - "127.0.0.1:18080:8080"
       - "6881:6881"
       - "6881:6881/udp"
     mem_limit: 450m
@@ -62,7 +62,7 @@ services:
     volumes:
       - ${CONFIG_PATH}/prowlarr:/config
     ports:
-      - "9696:9696"
+      - "127.0.0.1:9696:9696"
     mem_limit: 300m
     restart: unless-stopped
 
@@ -75,7 +75,7 @@ services:
       - LOG_LEVEL=info
       - TZ=${TZ}
     ports:
-      - "8191:8191"
+      - "127.0.0.1:8191:8191"
     mem_limit: 1g
     restart: unless-stopped
 
@@ -92,7 +92,7 @@ services:
       - ${CONFIG_PATH}/radarr:/config
       - ${MEDIA_PATH}:/media
     ports:
-      - "7878:7878"
+      - "127.0.0.1:7878:7878"
     mem_limit: 300m
     restart: unless-stopped
 
@@ -109,7 +109,7 @@ services:
       - ${CONFIG_PATH}/sonarr:/config
       - ${MEDIA_PATH}:/media
     ports:
-      - "8989:8989"
+      - "127.0.0.1:8989:8989"
     mem_limit: 300m
     restart: unless-stopped
 
@@ -126,7 +126,7 @@ services:
       - ${CONFIG_PATH}/bazarr:/config
       - ${MEDIA_PATH}:/media
     ports:
-      - "6767:6767"
+      - "127.0.0.1:6767:6767"
     mem_limit: 300m
     restart: unless-stopped
 
@@ -157,7 +157,7 @@ services:
       - ${CONFIG_PATH}/homarr:/appdata
       - /var/run/docker.sock:/var/run/docker.sock:ro
     ports:
-      - "7575:7575"
+      - "127.0.0.1:7575:7575"
     mem_limit: 500m
     restart: unless-stopped
 
@@ -235,7 +235,7 @@ services:
       - ${MEDIA_PATH}:/srv
       - ${CONFIG_PATH}/filebrowser:/database
     ports:
-      - "8081:80"
+      - "127.0.0.1:8081:80"
     mem_limit: 150m
     restart: unless-stopped
 
