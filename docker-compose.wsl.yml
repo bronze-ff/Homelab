@@ -1,0 +1,240 @@
+####################################################################
+# Homelab — PC de casa (Ryzen 5 5600G · 16 GB · RTX 5060)
+# Windows 11 + WSL2 (Debian) + Docker Engine nativo no WSL (sem Docker Desktop).
+#
+# Paths: ${MEDIA_PATH}        -> /media  (D:\Homelab no HD de 1 TB: biblioteca + downloads,
+#                                         mesmo disco = hardlink)
+#        ${CONFIG_PATH}/<app> -> /config (ext4 dentro do disco virtual do WSL, no SSD E:;
+#                                         evita o "database is locked" do SQLite no 9p)
+#
+# Liga/desliga junto com o "modo jogo" da Casa Local: no jogo a stack para e o WSL
+# desliga (devolve a RAM); ao sair, `docker compose up -d` traz tudo de volta.
+# Portas publicadas no Windows pelo modo de rede "mirrored" do WSL (ver WSL.md).
+####################################################################
+
+name: homelab
+
+networks:
+  homelab:
+    name: homelab
+    driver: bridge
+
+x-linuxserver: &linuxserver
+  networks: [homelab]
+  restart: unless-stopped
+  environment: &env
+    PUID: ${PUID}
+    PGID: ${PGID}
+    TZ: ${TZ}
+
+services:
+  # ---------------- Jellyfin (streaming) ----------------
+  # Transcode por hardware na RTX 5060 (NVENC/NVDEC): precisa do NVIDIA Container
+  # Toolkit no WSL (WSL.md). Sem ele, comente o bloco "deploy".
+  jellyfin:
+    <<: *linuxserver
+    image: lscr.io/linuxserver/jellyfin:latest
+    container_name: jellyfin
+    environment:
+      <<: *env
+      NVIDIA_VISIBLE_DEVICES: all
+      NVIDIA_DRIVER_CAPABILITIES: compute,video,utility
+    volumes:
+      - ${CONFIG_PATH}/jellyfin:/config
+      - ${MEDIA_PATH}:/media
+    ports:
+      - "8096:8096"
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu, video]
+    mem_limit: 2g
+
+  # ---------------- qBittorrent (download) ----------------
+  qbittorrent:
+    <<: *linuxserver
+    image: lscr.io/linuxserver/qbittorrent:latest
+    container_name: qbittorrent
+    environment:
+      <<: *env
+      WEBUI_PORT: 8080
+      TORRENTING_PORT: 6881
+    volumes:
+      - ${CONFIG_PATH}/qbittorrent:/config
+      - ${MEDIA_PATH}:/media
+    ports:
+      - "8080:8080"
+      - "6881:6881"
+      - "6881:6881/udp"
+    mem_limit: 1g
+
+  # ---------------- Prowlarr (indexadores) ----------------
+  prowlarr:
+    <<: *linuxserver
+    image: lscr.io/linuxserver/prowlarr:latest
+    container_name: prowlarr
+    # DNS público: o DNS do provedor bloqueia alguns indexadores ("Name does not resolve").
+    dns: [1.1.1.1, 8.8.8.8]
+    volumes:
+      - ${CONFIG_PATH}/prowlarr:/config
+    ports:
+      - "9696:9696"
+    mem_limit: 400m
+
+  # ---------------- FlareSolverr (bypass Cloudflare) ----------------
+  # Aqui há RAM sobrando: fica ligado (só a rede interna o usa: http://flaresolverr:8191).
+  flaresolverr:
+    image: ghcr.io/flaresolverr/flaresolverr:latest
+    container_name: flaresolverr
+    networks: [homelab]
+    dns: [1.1.1.1, 8.8.8.8]
+    environment:
+      LOG_LEVEL: info
+      TZ: ${TZ}
+    mem_limit: 600m
+    restart: unless-stopped
+
+  # ---------------- Radarr (filmes) ----------------
+  radarr:
+    <<: *linuxserver
+    image: lscr.io/linuxserver/radarr:latest
+    container_name: radarr
+    volumes:
+      - ${CONFIG_PATH}/radarr:/config
+      - ${MEDIA_PATH}:/media
+    ports:
+      - "7878:7878"
+    mem_limit: 500m
+
+  # ---------------- Sonarr (séries + anime) ----------------
+  sonarr:
+    <<: *linuxserver
+    image: lscr.io/linuxserver/sonarr:latest
+    container_name: sonarr
+    volumes:
+      - ${CONFIG_PATH}/sonarr:/config
+      - ${MEDIA_PATH}:/media
+    ports:
+      - "8989:8989"
+    mem_limit: 500m
+
+  # ---------------- Bazarr (legendas PT-BR) ----------------
+  bazarr:
+    <<: *linuxserver
+    image: lscr.io/linuxserver/bazarr:latest
+    container_name: bazarr
+    volumes:
+      - ${CONFIG_PATH}/bazarr:/config
+      - ${MEDIA_PATH}:/media
+    ports:
+      - "6767:6767"
+    mem_limit: 400m
+
+  # ---------------- Jellyseerr (pedidos) ----------------
+  jellyseerr:
+    image: fallenbagel/jellyseerr:latest
+    container_name: jellyseerr
+    networks: [homelab]
+    environment:
+      TZ: ${TZ}
+      LOG_LEVEL: info
+    volumes:
+      - ${CONFIG_PATH}/jellyseerr:/app/config
+    ports:
+      - "5055:5055"
+    mem_limit: 500m
+    restart: unless-stopped
+
+  # ---------------- Homarr (dashboard) — opcional ----------------
+  # Neste PC o painel do home lab é a aba Lab da Casa Local (status, links, modo jogo),
+  # então o Homarr não sobe por padrão. Para usar: docker compose --profile extras up -d homarr
+  homarr:
+    image: ghcr.io/homarr-labs/homarr:latest
+    container_name: homarr
+    profiles: [extras]
+    networks: [homelab]
+    environment:
+      TZ: ${TZ}
+      SECRET_ENCRYPTION_KEY: ${HOMARR_SECRET}
+    volumes:
+      - ${CONFIG_PATH}/homarr:/appdata
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    ports:
+      - "7575:7575"
+    mem_limit: 600m
+    restart: unless-stopped
+
+  # ---------------- Filebrowser (arquivos da mídia pelo navegador) ----------------
+  filebrowser:
+    image: filebrowser/filebrowser:latest
+    container_name: filebrowser
+    networks: [homelab]
+    user: "${PUID}:${PGID}"
+    environment:
+      TZ: ${TZ}
+      FB_DATABASE: /database/filebrowser.db
+      FB_ROOT: /srv
+      FB_PORT: 80
+    volumes:
+      - ${MEDIA_PATH}:/srv
+      - ${CONFIG_PATH}/filebrowser:/database
+    ports:
+      - "8081:80"
+    mem_limit: 150m
+    restart: unless-stopped
+
+  # ---------------- Configarr (perfis TRaSH / PT-BR, sob demanda) ----------------
+  #   docker compose -f docker-compose.wsl.yml run --rm configarr
+  configarr:
+    image: ghcr.io/raydak-labs/configarr:latest
+    container_name: configarr
+    networks: [homelab]
+    user: ${PUID}:${PGID}
+    profiles: [tools]
+    environment:
+      TZ: ${TZ}
+    volumes:
+      - ${CONFIG_PATH}/configarr/config:/app/config
+      - ${CONFIG_PATH}/configarr/cfs:/app/cfs
+      - ${CONFIG_PATH}/configarr/repos:/app/repos
+    restart: "no"
+
+  # ---------------- openGym (treinos e peso) ----------------
+  # github.com/DuarteSantos8/openGym. Passkeys exigem HTTPS: servido pelo
+  # `tailscale serve --https=8443` em https://<host>.ts.net:8443 (OPENGYM_* no .env).
+  opengym-api:
+    image: ghcr.io/duartesantos8/opengym-api:latest
+    container_name: opengym-api
+    networks: [homelab]
+    environment:
+      PORT: 3000
+      DATA_DIR: /data
+      TRUST_PROXY: 1
+      RP_ID: ${OPENGYM_RP_ID}
+      ORIGIN: ${OPENGYM_ORIGIN}
+      RP_NAME: openGym
+      FIRST_USER_ADMIN: 1
+      DEFAULT_LANG: pt-BR
+      INVITE_ONLY: ${OPENGYM_INVITE_ONLY:-0}
+    volumes:
+      - ${CONFIG_PATH}/opengym:/data
+    mem_limit: 300m
+    restart: unless-stopped
+
+  opengym-web:
+    image: ghcr.io/duartesantos8/opengym-web:latest
+    container_name: opengym-web
+    networks: [homelab]
+    depends_on: [opengym-api]
+    environment:
+      NGINX_PORT: 80
+      BACKEND: opengym-api
+      PORT: 3000
+      RESOLVER: 127.0.0.11
+    ports:
+      - "8090:80"
+    mem_limit: 150m
+    restart: unless-stopped
