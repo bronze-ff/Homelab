@@ -22,7 +22,7 @@ porque o CS2 com FACEIT não roda em Linux nem em máquina virtual.
 | Serviço | Porta | Pelo Tailscale |
 |---|---|---|
 | Jellyfin | 8096 | `https://<host>.ts.net:10000` |
-| Jellyseerr | 5055 | `http://<host>:5055` |
+| Seerr (antigo Jellyseerr) | 5055 | `http://<host>:5055` |
 | **openGym** (treinos) | 8090 | `https://<host>.ts.net:8443` (passkeys exigem HTTPS) |
 | qBittorrent | 8080 | |
 | Radarr / Sonarr / Prowlarr / Bazarr | 7878 / 8989 / 9696 / 6767 | |

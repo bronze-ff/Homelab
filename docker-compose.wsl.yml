@@ -133,10 +133,12 @@ services:
       - "6767:6767"
     mem_limit: 400m
 
-  # ---------------- Jellyseerr (pedidos) ----------------
-  jellyseerr:
-    image: fallenbagel/jellyseerr:latest
-    container_name: jellyseerr
+  # ---------------- Seerr (pedidos; sucessor do Jellyseerr) ----------------
+  # Mesma pasta de config do Jellyseerr: o banco migra sozinho no 1º início. Roda como UID 1000.
+  seerr:
+    image: ghcr.io/seerr-team/seerr:latest
+    init: true
+    container_name: seerr
     networks: [homelab]
     environment:
       TZ: ${TZ}
