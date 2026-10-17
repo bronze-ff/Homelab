@@ -7,8 +7,8 @@
 #        ${CONFIG_PATH}/<app> -> /config (ext4 dentro do disco virtual do WSL, no SSD E:;
 #                                         evita o "database is locked" do SQLite no 9p)
 #
-# Liga/desliga junto com o "modo jogo" da Casa Local: no jogo a stack para e o WSL
-# desliga (devolve a RAM); ao sair, `docker compose up -d` traz tudo de volta.
+# Modo jogo da Casa Local: os serviços pesados param (mídia, downloads, Frigate) e os leves
+# de aviso e monitoramento continuam (ntfy, Uptime Kuma, Diun, Dozzle, Vaultwarden, openGym); ao sair, `docker compose up -d` traz tudo de volta.
 # Portas publicadas no Windows pelo modo de rede "mirrored" do WSL (ver WSL.md).
 ####################################################################
 
@@ -237,4 +237,171 @@ services:
     ports:
       - "8090:80"
     mem_limit: 150m
+    restart: unless-stopped
+
+  # ================== Avisos, monitoramento e manutenção ==================
+  # Ficam ligados no modo jogo (leves): os avisos do celular não param enquanto você joga.
+
+  # ---------------- ntfy (push no celular) ----------------
+  # https://<host>.ts.net:10000 pelo Tailscale Serve. No iPhone o ntfy.sh só "acorda" o app
+  # (upstream); o conteúdo vem deste servidor.
+  ntfy:
+    image: binwiederhier/ntfy:latest
+    container_name: ntfy
+    networks: [homelab]
+    command: serve
+    environment:
+      TZ: ${TZ}
+      NTFY_BASE_URL: ${NTFY_BASE_URL}
+      NTFY_UPSTREAM_BASE_URL: https://ntfy.sh
+      NTFY_BEHIND_PROXY: "true"
+      NTFY_CACHE_FILE: /var/cache/ntfy/cache.db
+      NTFY_CACHE_DURATION: 72h
+      NTFY_ATTACHMENT_CACHE_DIR: /var/cache/ntfy/attachments
+      NTFY_ATTACHMENT_EXPIRY_DURATION: 72h
+      NTFY_ENABLE_LOGIN: "false"
+    volumes:
+      - ${CONFIG_PATH}/ntfy:/var/cache/ntfy
+    ports:
+      - "2586:80"
+    mem_limit: 100m
+    restart: unless-stopped
+
+  # ---------------- Uptime Kuma (disponibilidade dos serviços) ----------------
+  # Rede do host: enxerga os containers e também a Casa Local e o go2rtc no Windows.
+  uptime-kuma:
+    image: louislam/uptime-kuma:2
+    container_name: uptime-kuma
+    network_mode: host
+    environment:
+      TZ: ${TZ}
+      UPTIME_KUMA_PORT: 3001
+    volumes:
+      - ${CONFIG_PATH}/uptime-kuma:/app/data
+    mem_limit: 300m
+    restart: unless-stopped
+
+  # ---------------- Diun (avisa quando há versão nova; não atualiza sozinho) ----------------
+  diun:
+    image: crazymax/diun:latest
+    container_name: diun
+    networks: [homelab]
+    command: serve
+    environment:
+      TZ: ${TZ}
+      DIUN_WATCH_SCHEDULE: "0 9 * * *"
+      DIUN_WATCH_FIRSTCHECKNOTIF: "false"
+      DIUN_PROVIDERS_DOCKER: "true"
+      DIUN_PROVIDERS_DOCKER_WATCHBYDEFAULT: "true"
+      DIUN_NOTIF_NTFY_ENDPOINT: http://ntfy:80
+      DIUN_NOTIF_NTFY_TOPIC: ${NTFY_TOPIC_SISTEMA:-casa-sistema}
+      DIUN_NOTIF_NTFY_PRIORITY: "2"
+    volumes:
+      - ${CONFIG_PATH}/diun:/data
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    mem_limit: 80m
+    restart: unless-stopped
+
+  # ---------------- Dozzle (logs dos containers no navegador) ----------------
+  dozzle:
+    image: amir20/dozzle:latest
+    container_name: dozzle
+    networks: [homelab]
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    ports:
+      - "8888:8080"
+    mem_limit: 80m
+    restart: unless-stopped
+
+  # ---------------- Unpackerr (extrai .rar para Radarr/Sonarr) ----------------
+  unpackerr:
+    image: golift/unpackerr:latest
+    container_name: unpackerr
+    networks: [homelab]
+    user: "${PUID}:${PGID}"
+    environment:
+      TZ: ${TZ}
+      UN_SONARR_0_URL: http://sonarr:8989
+      UN_SONARR_0_API_KEY: ${SONARR_API_KEY}
+      UN_SONARR_0_PATHS_0: /media/torrents
+      UN_RADARR_0_URL: http://radarr:7878
+      UN_RADARR_0_API_KEY: ${RADARR_API_KEY}
+      UN_RADARR_0_PATHS_0: /media/torrents
+    volumes:
+      - ${MEDIA_PATH}:/media
+    mem_limit: 100m
+    restart: unless-stopped
+
+  # ---------------- Vaultwarden (senhas, app Bitwarden) ----------------
+  # https://<host>.ts.net/vault (Tailscale Serve no caminho /vault). Para restaurar o backup
+  # antigo, troque ${CONFIG_PATH}/vaultwarden pelo conteúdo extraído (WSL.md).
+  vaultwarden:
+    image: vaultwarden/server:latest
+    container_name: vaultwarden
+    networks: [homelab]
+    environment:
+      TZ: ${TZ}
+      DOMAIN: ${VAULTWARDEN_DOMAIN}
+      ADMIN_TOKEN: ${VAULTWARDEN_ADMIN_TOKEN}
+      SIGNUPS_ALLOWED: ${VAULTWARDEN_SIGNUPS:-true}
+    volumes:
+      - ${CONFIG_PATH}/vaultwarden:/data
+    ports:
+      - "8222:80"
+    mem_limit: 200m
+    restart: unless-stopped
+
+  # ---------------- AdGuard Home (DNS e bloqueio de anúncios) ----------------
+  # DNS na porta 53 do PC; painel em http://<pc>:3053. Os aparelhos só usam se você apontar
+  # o DNS do roteador ou do Tailscale para este PC (WSL.md explica o cuidado com o PC desligado).
+  # Fica desligado aqui (perfil "extras"): no Windows deste PC a porta 53 já é de um serviço do
+  # sistema (svchost), então o DNS não tem como responder para a rede.
+  adguardhome:
+    image: adguard/adguardhome:latest
+    container_name: adguardhome
+    profiles: [extras]
+    networks: [homelab]
+    volumes:
+      - ${CONFIG_PATH}/adguardhome/work:/opt/adguardhome/work
+      - ${CONFIG_PATH}/adguardhome/conf:/opt/adguardhome/conf
+    ports:
+      - "53:53/tcp"
+      - "53:53/udp"
+      - "3053:3000"
+    mem_limit: 200m
+    restart: unless-stopped
+
+  # ================== Câmeras inteligentes ==================
+  # ---------------- Frigate (pessoas, carros e rostos na RTX) ----------------
+  # Só detecção: o DVR continua gravando. Lê o RTSP direto do DVR (credenciais FRIGATE_DVR_* no
+  # .env); rede do host para a Casa Local falar com a API interna em 127.0.0.1:5000. API interna só em 127.0.0.1:5000 (a Casa Local usa); painel com
+  # login em https://<pc>:8971. Para no modo jogo (usa a GPU).
+  frigate:
+    image: ghcr.io/blakeblackshear/frigate:0.18.2-tensorrt
+    container_name: frigate
+    network_mode: host
+    shm_size: "512mb"
+    environment:
+      TZ: ${TZ}
+      NVIDIA_VISIBLE_DEVICES: all
+      NVIDIA_DRIVER_CAPABILITIES: compute,video,utility
+      FRIGATE_DVR_USER: ${FRIGATE_DVR_USER}
+      FRIGATE_DVR_PASS: ${FRIGATE_DVR_PASS}
+      FRIGATE_DVR_HOST: ${FRIGATE_DVR_HOST}
+    volumes:
+      - ${CONFIG_PATH}/frigate:/config
+      - ${CONFIG_PATH}/frigate-media:/media/frigate
+      - type: tmpfs
+        target: /tmp/cache
+        tmpfs:
+          size: 500000000
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu, video]
+    mem_limit: 3g
     restart: unless-stopped

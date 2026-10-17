@@ -18,6 +18,11 @@ config/configarr/*
 config/configarr/config/*
 !config/configarr/config/config.yml
 
+# Frigate: só o config.yml (credenciais do DVR vêm do .env; nunca o banco, modelos ou fotos).
+!config/frigate/
+config/frigate/*
+!config/frigate/config.yml
+
 # Configurações locais do Claude Code (permissões da máquina, não do homelab)
 .claude/
 

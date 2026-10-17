@@ -29,6 +29,37 @@ porque o CS2 com FACEIT não roda em Linux nem em máquina virtual.
 | Filebrowser | 8081 | |
 | FlareSolverr | só interno (`http://flaresolverr:8191`) | |
 
+### Avisos, monitoramento e câmeras (fase 1–2)
+
+| Serviço | Onde | Para quê |
+|---|---|---|
+| **ntfy** | `https://<host>.ts.net:10000` | Push no iPhone (tópicos `casa-pessoas`, `casa-cameras`, `casa-sistema`, `casa-casa`) |
+| **Uptime Kuma** | `http://<host>:3001` | Painel, câmeras, DVR, internet, ntfy, Vaultwarden e openGym; avisa no `casa-sistema` |
+| **Frigate** | `https://<host>:8971` (login) | Pessoas, carros e rostos em 4 câmeras, na RTX |
+| **Vaultwarden** | `https://<host>.ts.net/vault` | Senhas (app Bitwarden) |
+| **Dozzle** | `http://<host>:8888` | Logs dos containers |
+| Diun, Unpackerr | — | Aviso de atualização; extrair .rar |
+| AdGuard Home | desligado | A porta 53 do Windows já é de um serviço do sistema (svchost) |
+
+O Jellyfin passou para `https://<host>.ts.net/jellyfin` (BaseUrl `/jellyfin`) para liberar a porta 10000 ao ntfy.
+
+**Modo jogo:** param só os pesados (mídia, downloads, Frigate); ntfy, Uptime Kuma, Vaultwarden,
+Diun, Dozzle e openGym continuam. **Frigate** liga só com você fora de casa (localização na Casa
+Local), ou sempre/nunca pela aba Lab.
+
+**Frigate, notas do que deu certo:**
+- Imagem `0.18.2-tensorrt`, detector `onnx` com YOLOv9-s 320 gerado pelo comando oficial da
+  documentação (`~/homelab-config/frigate/model_cache/yolo.onnx`): ~10 ms por quadro na RTX.
+- Lê o RTSP **direto do DVR** (`FRIGATE_DVR_USER/PASS/HOST` no `.env`). Pelo go2rtc do Windows o
+  vídeo trava na rede espelhada do WSL (o handshake passa, o RTP não).
+- Só 4 câmeras (portão na principal para rostos, garagem, entrada e rua no substream). Com 12 o DVR
+  derrubava conexões e a CPU ia a 700%. Com 4: ~0,5 núcleo, ~2 GB de RAM e ~25% da GPU.
+- O go2rtc interno do Frigate muda para 1985/8556/8557 (1984/8554 são do go2rtc da Casa Local).
+- Senhas geradas (qBittorrent, Uptime Kuma, Frigate, admin do Vaultwarden) ficam só no `.env` do PC.
+
+**Memória:** teto do WSL em **6 GB** e 6 processadores (`.wslconfig`). Com 8 GB, o Frigate e o cache
+de imagens/builds deixaram o Windows com 2 GB livres e o PC travando.
+
 ## Instalação (o que foi feito, em ordem)
 
 ```powershell
@@ -44,9 +75,9 @@ wsl --install -d Debian --name homelab --location E:\WSL\homelab --no-launch --w
 ```ini
 [wsl2]
 networkingMode=mirrored
-memory=8GB
+memory=6GB
 swap=4GB
-processors=8
+processors=6
 vmIdleTimeout=-1
 
 [experimental]
