@@ -8,6 +8,8 @@ Fluxo: você **pede** um filme/série → o sistema **encontra** nos indexadores
 fica disponível para **assistir** no Jellyfin. Tudo acessível de fora via
 **Tailscale** e centralizado no **dashboard Homarr**.
 
+> 🎮 **PC de casa (Windows 11 + WSL2 + Docker Engine, com modo jogo):** guia em **[WSL.md](WSL.md)** + [`docker-compose.wsl.yml`](docker-compose.wsl.yml). É a versão em uso.
+>
 > 💻 **Duas plataformas neste repo:**
 > - **Windows (Docker Desktop)** — este `README.md` + [`docker-compose.yml`](docker-compose.yml).
 > - **Linux (Debian / Docker)** — guia em **[LINUX.md](LINUX.md)** + [`docker-compose.linux.yml`](docker-compose.linux.yml) e [`.env.linux.example`](.env.linux.example).

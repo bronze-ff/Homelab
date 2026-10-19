@@ -1,0 +1,83 @@
+# Frigate do PC de casa: só detecção (o DVR Intelbras grava). Lê o RTSP direto do DVR na rede local
+# (o vídeo do go2rtc do Windows trava ao atravessar a rede espelhada do WSL). subtype=1 = substream
+# leve; subtype=0 = principal, nas câmeras onde importa o rosto. Credenciais vêm do .env
+# (FRIGATE_DVR_*), nunca deste arquivo. Cópia viva em ~/homelab-config/frigate/config.yml.
+mqtt:
+  enabled: false
+
+networking:
+  listen:
+    internal: 127.0.0.1:5000   # API sem login só para a Casa Local, neste PC
+    external: 8971             # painel com login (https)
+
+# O go2rtc interno do Frigate não é usado; muda de porta porque 1984/8554 são do go2rtc da Casa Local.
+go2rtc:
+  api:
+    listen: "127.0.0.1:1985"
+  rtsp:
+    listen: "127.0.0.1:8556"
+  webrtc:
+    listen: "127.0.0.1:8557"
+
+detectors:
+  onnx:
+    type: onnx                  # imagem -tensorrt: usa a RTX 5060 sozinho
+
+model:
+  model_type: yolo-generic
+  width: 320
+  height: 320
+  input_tensor: nchw
+  input_dtype: float
+  path: /config/model_cache/yolo.onnx
+  labelmap_path: /labelmap/coco-80.txt
+
+ffmpeg:
+  hwaccel_args: preset-nvidia
+
+detect:
+  enabled: true
+  fps: 4
+
+objects:
+  track: [person, car, motorcycle, bicycle, dog, cat]
+  filters:
+    person:
+      min_score: 0.6
+      threshold: 0.75
+
+record:
+  enabled: false
+
+snapshots:
+  enabled: true
+  bounding_box: true
+  crop: false
+  retain:
+    default: 7
+
+face_recognition:
+  enabled: true
+  model_size: small
+
+review:
+  alerts:
+    labels: [person, car]
+
+cameras:
+  # Só as câmeras que mais importam: o DVR derruba conexões quando muitas abrem juntas, e cada uma
+  # custa CPU. O portão vai na principal (subtype=0) para reconhecer rostos; as outras no substream.
+  # Para incluir outra, copie um bloco e troque o channel.
+  cam2:   # Calçada · portão
+    ffmpeg: { inputs: [{ path: "rtsp://{FRIGATE_DVR_USER}:{FRIGATE_DVR_PASS}@{FRIGATE_DVR_HOST}/cam/realmonitor?channel=2&subtype=0", roles: [detect] }] }
+    detect: { fps: 5 }
+  cam6:   # Garagem
+    ffmpeg: { inputs: [{ path: "rtsp://{FRIGATE_DVR_USER}:{FRIGATE_DVR_PASS}@{FRIGATE_DVR_HOST}/cam/realmonitor?channel=6&subtype=1", roles: [detect] }] }
+  cam5:   # Entrada
+    ffmpeg: { inputs: [{ path: "rtsp://{FRIGATE_DVR_USER}:{FRIGATE_DVR_PASS}@{FRIGATE_DVR_HOST}/cam/realmonitor?channel=5&subtype=1", roles: [detect] }] }
+  cam1:   # Rua · muro
+    ffmpeg: { inputs: [{ path: "rtsp://{FRIGATE_DVR_USER}:{FRIGATE_DVR_PASS}@{FRIGATE_DVR_HOST}/cam/realmonitor?channel=1&subtype=1", roles: [detect] }] }
+    objects: { track: [person, car, motorcycle, bicycle] }
+  cam13:  # Corredor lateral (porta do quarto)
+    ffmpeg: { inputs: [{ path: "rtsp://{FRIGATE_DVR_USER}:{FRIGATE_DVR_PASS}@{FRIGATE_DVR_HOST}/cam/realmonitor?channel=13&subtype=1", roles: [detect] }] }
+    objects: { track: [person] }

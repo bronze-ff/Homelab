@@ -1,0 +1,8 @@
+[Unit]
+Description=Limpeza semanal do home lab (imagens Docker sem uso e journal antigo)
+After=docker.service
+
+[Service]
+Type=oneshot
+Nice=10
+ExecStart=/home/filippe/homelab/scripts/limpeza-semanal.sh

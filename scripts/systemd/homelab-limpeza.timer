@@ -1,0 +1,9 @@
+[Unit]
+Description=Limpeza semanal do home lab aos domingos 05:15
+
+[Timer]
+OnCalendar=Sun *-*-* 05:15:00
+Persistent=true
+
+[Install]
+WantedBy=timers.target
