@@ -22,7 +22,8 @@ porque o CS2 com FACEIT não roda em Linux nem em máquina virtual.
 | Serviço | Porta | Pelo Tailscale |
 |---|---|---|
 | Jellyfin | 8096 | `https://<host>.ts.net:10000` |
-| Seerr (antigo Jellyseerr) | 5055 | `http://<host>:5055` |
+| Seerr (antigo Jellyseerr) | 5055 | `https://<host>.ts.net:8446` (avisa no ntfy `casa-filmes` quando o pedido fica pronto) |
+| **Actual** (finanças) | só 127.0.0.1:5006 | `https://<host>.ts.net:8445` (o app exige HTTPS; a senha é criada no 1º acesso) |
 | **openGym** (treinos) | 8090 | `https://<host>.ts.net:8443` (passkeys exigem HTTPS) |
 | qBittorrent | 8080 | |
 | Radarr / Sonarr / Prowlarr / Bazarr | 7878 / 8989 / 9696 / 6767 | |
@@ -123,10 +124,28 @@ docker compose up -d
 
 ```powershell
 tailscale serve --bg --https=8443 http://127.0.0.1:8090   # openGym
-tailscale serve --bg --https=10000 http://127.0.0.1:8096  # Jellyfin
+tailscale serve --bg --https=10000 http://127.0.0.1:2586  # ntfy
+tailscale serve --bg --https=8445 http://127.0.0.1:5006   # Actual
+tailscale serve --bg --https=8446 http://127.0.0.1:5055   # Seerr
+tailscale serve --bg --set-path /jellyfin http://127.0.0.1:8096/jellyfin
 ```
 
-O `/` (443) continua sendo a Casa Local. O Serve só aceita HTTPS nas portas 443, 8443 e 10000.
+O `/` (443) continua sendo a Casa Local. Tudo "tailnet only" (nunca `funnel`).
+
+## Backup e limpeza (timers do systemd)
+
+`bash scripts/instalar-timers.sh` instala dois timers:
+
+- **homelab-backup** (todo dia 04:30): `scripts/backup-homelab.sh` grava
+  `D:\Homelab\backups\homelab-AAAAMMDD.tar.gz` com as configs dos serviços, o `.env` e o compose
+  (sem caches, metadados do Jellyfin, logs e snapshots), guarda os 7 últimos e copia junto os backups
+  diários da Casa Local (`casa-local/`). ~20 MB por dia. O `.env` tem senhas: o arquivo fica só no HD
+  local; para nuvem, cifre antes.
+- **homelab-limpeza** (domingo 05:15): `scripts/limpeza-semanal.sh` apaga imagens Docker sem uso há
+  mais de 7 dias, cache de build e journal com mais de 14 dias.
+
+Restaurar: `docker compose down`, `tar -xzf homelab-AAAAMMDD.tar.gz -C ~/homelab-config` (o `.env` e
+o compose vêm na raiz do arquivo: mova para `~/homelab`), `docker compose up -d`.
 
 ## Ligação entre os serviços (feita pelas APIs)
 

@@ -354,6 +354,22 @@ services:
     mem_limit: 200m
     restart: unless-stopped
 
+  # Finanças da casa (Actual Budget). Só no 127.0.0.1: o acesso é pelo Tailscale Serve em HTTPS
+  # (https://<pc>.ts.net:8445), que o app exige. A senha do servidor é criada no primeiro acesso.
+  actual:
+    image: actualbudget/actual-server:latest
+    container_name: actual
+    networks: [homelab]
+    environment:
+      TZ: ${TZ}
+      ACTUAL_PORT: 5006
+    volumes:
+      - ${CONFIG_PATH}/actual:/data
+    ports:
+      - "127.0.0.1:5006:5006"
+    mem_limit: 300m
+    restart: unless-stopped
+
   # ---------------- AdGuard Home (DNS e bloqueio de anúncios) ----------------
   # DNS na porta 53 do PC; painel em http://<pc>:3053. Os aparelhos só usam se você apontar
   # o DNS do roteador ou do Tailscale para este PC (WSL.md explica o cuidado com o PC desligado).

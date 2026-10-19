@@ -1,0 +1,10 @@
+[Unit]
+Description=Backup noturno do home lab (configs e .env no HD)
+After=docker.service
+
+[Service]
+Type=oneshot
+Environment=CONFIG_PATH=/home/filippe/homelab-config STACK=/home/filippe/homelab
+Nice=10
+IOSchedulingClass=idle
+ExecStart=/home/filippe/homelab/scripts/backup-homelab.sh
